@@ -1,0 +1,698 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		2267ADF0300C1AE900D62DAB /* bilingual reader watch flashcard Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 2267ADEF300C1AE900D62DAB /* bilingual reader watch flashcard Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		2267ADF5300C1AE900D62DAB /* bilingual_reader_watch_flashcardApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267ADF4300C1AE900D62DAB /* bilingual_reader_watch_flashcardApp.swift */; };
+		2267ADF7300C1AE900D62DAB /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267ADF6300C1AE900D62DAB /* ContentView.swift */; };
+		2267ADF9300C1AE900D62DAB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2267ADF8300C1AE900D62DAB /* Assets.xcassets */; };
+		2267ADFC300C1AE900D62DAB /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2267ADFB300C1AE900D62DAB /* Preview Assets.xcassets */; };
+		2267AE06300C1AEA00D62DAB /* bilingual_reader_watch_flashcard_Watch_AppTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE05300C1AEA00D62DAB /* bilingual_reader_watch_flashcard_Watch_AppTests.swift */; };
+		2267AE10300C1AEA00D62DAB /* bilingual_reader_watch_flashcard_Watch_AppUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE0F300C1AEA00D62DAB /* bilingual_reader_watch_flashcard_Watch_AppUITests.swift */; };
+		2267AE12300C1AEA00D62DAB /* bilingual_reader_watch_flashcard_Watch_AppUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE11300C1AEA00D62DAB /* bilingual_reader_watch_flashcard_Watch_AppUITestsLaunchTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		2267ADF1300C1AE900D62DAB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2267ADE3300C1AE800D62DAB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2267ADEE300C1AE900D62DAB;
+			remoteInfo = "bilingual reader watch flashcard Watch App";
+		};
+		2267AE02300C1AEA00D62DAB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2267ADE3300C1AE800D62DAB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2267ADEE300C1AE900D62DAB;
+			remoteInfo = "bilingual reader watch flashcard Watch App";
+		};
+		2267AE0C300C1AEA00D62DAB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2267ADE3300C1AE800D62DAB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2267ADEE300C1AE900D62DAB;
+			remoteInfo = "bilingual reader watch flashcard Watch App";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		2267AE18300C1AEA00D62DAB /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				2267ADF0300C1AE900D62DAB /* bilingual reader watch flashcard Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		2267ADE9300C1AE800D62DAB /* bilingual reader watch flashcard.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "bilingual reader watch flashcard.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		2267ADEF300C1AE900D62DAB /* bilingual reader watch flashcard Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "bilingual reader watch flashcard Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		2267ADF4300C1AE900D62DAB /* bilingual_reader_watch_flashcardApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = bilingual_reader_watch_flashcardApp.swift; sourceTree = "<group>"; };
+		2267ADF6300C1AE900D62DAB /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		2267ADF8300C1AE900D62DAB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		2267ADFB300C1AE900D62DAB /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		2267AE01300C1AEA00D62DAB /* bilingual reader watch flashcard Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "bilingual reader watch flashcard Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		2267AE05300C1AEA00D62DAB /* bilingual_reader_watch_flashcard_Watch_AppTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = bilingual_reader_watch_flashcard_Watch_AppTests.swift; sourceTree = "<group>"; };
+		2267AE0B300C1AEA00D62DAB /* bilingual reader watch flashcard Watch AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "bilingual reader watch flashcard Watch AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		2267AE0F300C1AEA00D62DAB /* bilingual_reader_watch_flashcard_Watch_AppUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = bilingual_reader_watch_flashcard_Watch_AppUITests.swift; sourceTree = "<group>"; };
+		2267AE11300C1AEA00D62DAB /* bilingual_reader_watch_flashcard_Watch_AppUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = bilingual_reader_watch_flashcard_Watch_AppUITestsLaunchTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		2267ADEC300C1AE900D62DAB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2267ADFE300C1AEA00D62DAB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2267AE08300C1AEA00D62DAB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		2267ADE2300C1AE800D62DAB = {
+			isa = PBXGroup;
+			children = (
+				2267ADF3300C1AE900D62DAB /* bilingual reader watch flashcard Watch App */,
+				2267AE04300C1AEA00D62DAB /* bilingual reader watch flashcard Watch AppTests */,
+				2267AE0E300C1AEA00D62DAB /* bilingual reader watch flashcard Watch AppUITests */,
+				2267ADEA300C1AE800D62DAB /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		2267ADEA300C1AE800D62DAB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				2267ADE9300C1AE800D62DAB /* bilingual reader watch flashcard.app */,
+				2267ADEF300C1AE900D62DAB /* bilingual reader watch flashcard Watch App.app */,
+				2267AE01300C1AEA00D62DAB /* bilingual reader watch flashcard Watch AppTests.xctest */,
+				2267AE0B300C1AEA00D62DAB /* bilingual reader watch flashcard Watch AppUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		2267ADF3300C1AE900D62DAB /* bilingual reader watch flashcard Watch App */ = {
+			isa = PBXGroup;
+			children = (
+				2267ADF4300C1AE900D62DAB /* bilingual_reader_watch_flashcardApp.swift */,
+				2267ADF6300C1AE900D62DAB /* ContentView.swift */,
+				2267ADF8300C1AE900D62DAB /* Assets.xcassets */,
+				2267ADFA300C1AE900D62DAB /* Preview Content */,
+			);
+			path = "bilingual reader watch flashcard Watch App";
+			sourceTree = "<group>";
+		};
+		2267ADFA300C1AE900D62DAB /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				2267ADFB300C1AE900D62DAB /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		2267AE04300C1AEA00D62DAB /* bilingual reader watch flashcard Watch AppTests */ = {
+			isa = PBXGroup;
+			children = (
+				2267AE05300C1AEA00D62DAB /* bilingual_reader_watch_flashcard_Watch_AppTests.swift */,
+			);
+			path = "bilingual reader watch flashcard Watch AppTests";
+			sourceTree = "<group>";
+		};
+		2267AE0E300C1AEA00D62DAB /* bilingual reader watch flashcard Watch AppUITests */ = {
+			isa = PBXGroup;
+			children = (
+				2267AE0F300C1AEA00D62DAB /* bilingual_reader_watch_flashcard_Watch_AppUITests.swift */,
+				2267AE11300C1AEA00D62DAB /* bilingual_reader_watch_flashcard_Watch_AppUITestsLaunchTests.swift */,
+			);
+			path = "bilingual reader watch flashcard Watch AppUITests";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		2267ADE8300C1AE800D62DAB /* bilingual reader watch flashcard */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2267AE19300C1AEA00D62DAB /* Build configuration list for PBXNativeTarget "bilingual reader watch flashcard" */;
+			buildPhases = (
+				2267ADE7300C1AE800D62DAB /* Resources */,
+				2267AE18300C1AEA00D62DAB /* Embed Watch Content */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				2267ADF2300C1AE900D62DAB /* PBXTargetDependency */,
+			);
+			name = "bilingual reader watch flashcard";
+			productName = "bilingual reader watch flashcard";
+			productReference = 2267ADE9300C1AE800D62DAB /* bilingual reader watch flashcard.app */;
+			productType = "com.apple.product-type.application.watchapp2-container";
+		};
+		2267ADEE300C1AE900D62DAB /* bilingual reader watch flashcard Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2267AE15300C1AEA00D62DAB /* Build configuration list for PBXNativeTarget "bilingual reader watch flashcard Watch App" */;
+			buildPhases = (
+				2267ADEB300C1AE900D62DAB /* Sources */,
+				2267ADEC300C1AE900D62DAB /* Frameworks */,
+				2267ADED300C1AE900D62DAB /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "bilingual reader watch flashcard Watch App";
+			productName = "bilingual reader watch flashcard Watch App";
+			productReference = 2267ADEF300C1AE900D62DAB /* bilingual reader watch flashcard Watch App.app */;
+			productType = "com.apple.product-type.application";
+		};
+		2267AE00300C1AEA00D62DAB /* bilingual reader watch flashcard Watch AppTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2267AE1C300C1AEA00D62DAB /* Build configuration list for PBXNativeTarget "bilingual reader watch flashcard Watch AppTests" */;
+			buildPhases = (
+				2267ADFD300C1AEA00D62DAB /* Sources */,
+				2267ADFE300C1AEA00D62DAB /* Frameworks */,
+				2267ADFF300C1AEA00D62DAB /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				2267AE03300C1AEA00D62DAB /* PBXTargetDependency */,
+			);
+			name = "bilingual reader watch flashcard Watch AppTests";
+			productName = "bilingual reader watch flashcard Watch AppTests";
+			productReference = 2267AE01300C1AEA00D62DAB /* bilingual reader watch flashcard Watch AppTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		2267AE0A300C1AEA00D62DAB /* bilingual reader watch flashcard Watch AppUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2267AE1F300C1AEA00D62DAB /* Build configuration list for PBXNativeTarget "bilingual reader watch flashcard Watch AppUITests" */;
+			buildPhases = (
+				2267AE07300C1AEA00D62DAB /* Sources */,
+				2267AE08300C1AEA00D62DAB /* Frameworks */,
+				2267AE09300C1AEA00D62DAB /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				2267AE0D300C1AEA00D62DAB /* PBXTargetDependency */,
+			);
+			name = "bilingual reader watch flashcard Watch AppUITests";
+			productName = "bilingual reader watch flashcard Watch AppUITests";
+			productReference = 2267AE0B300C1AEA00D62DAB /* bilingual reader watch flashcard Watch AppUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		2267ADE3300C1AE800D62DAB /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1540;
+				LastUpgradeCheck = 1540;
+				TargetAttributes = {
+					2267ADE8300C1AE800D62DAB = {
+						CreatedOnToolsVersion = 15.4;
+					};
+					2267ADEE300C1AE900D62DAB = {
+						CreatedOnToolsVersion = 15.4;
+					};
+					2267AE00300C1AEA00D62DAB = {
+						CreatedOnToolsVersion = 15.4;
+						TestTargetID = 2267ADEE300C1AE900D62DAB;
+					};
+					2267AE0A300C1AEA00D62DAB = {
+						CreatedOnToolsVersion = 15.4;
+						TestTargetID = 2267ADEE300C1AE900D62DAB;
+					};
+				};
+			};
+			buildConfigurationList = 2267ADE6300C1AE800D62DAB /* Build configuration list for PBXProject "bilingual reader watch flashcard" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 2267ADE2300C1AE800D62DAB;
+			productRefGroup = 2267ADEA300C1AE800D62DAB /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				2267ADE8300C1AE800D62DAB /* bilingual reader watch flashcard */,
+				2267ADEE300C1AE900D62DAB /* bilingual reader watch flashcard Watch App */,
+				2267AE00300C1AEA00D62DAB /* bilingual reader watch flashcard Watch AppTests */,
+				2267AE0A300C1AEA00D62DAB /* bilingual reader watch flashcard Watch AppUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		2267ADE7300C1AE800D62DAB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2267ADED300C1AE900D62DAB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2267ADFC300C1AE900D62DAB /* Preview Assets.xcassets in Resources */,
+				2267ADF9300C1AE900D62DAB /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2267ADFF300C1AEA00D62DAB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2267AE09300C1AEA00D62DAB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		2267ADEB300C1AE900D62DAB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2267ADF7300C1AE900D62DAB /* ContentView.swift in Sources */,
+				2267ADF5300C1AE900D62DAB /* bilingual_reader_watch_flashcardApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2267ADFD300C1AEA00D62DAB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2267AE06300C1AEA00D62DAB /* bilingual_reader_watch_flashcard_Watch_AppTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2267AE07300C1AEA00D62DAB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2267AE12300C1AEA00D62DAB /* bilingual_reader_watch_flashcard_Watch_AppUITestsLaunchTests.swift in Sources */,
+				2267AE10300C1AEA00D62DAB /* bilingual_reader_watch_flashcard_Watch_AppUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		2267ADF2300C1AE900D62DAB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2267ADEE300C1AE900D62DAB /* bilingual reader watch flashcard Watch App */;
+			targetProxy = 2267ADF1300C1AE900D62DAB /* PBXContainerItemProxy */;
+		};
+		2267AE03300C1AEA00D62DAB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2267ADEE300C1AE900D62DAB /* bilingual reader watch flashcard Watch App */;
+			targetProxy = 2267AE02300C1AEA00D62DAB /* PBXContainerItemProxy */;
+		};
+		2267AE0D300C1AEA00D62DAB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2267ADEE300C1AE900D62DAB /* bilingual reader watch flashcard Watch App */;
+			targetProxy = 2267AE0C300C1AEA00D62DAB /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		2267AE13300C1AEA00D62DAB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		2267AE14300C1AEA00D62DAB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		2267AE16300C1AEA00D62DAB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"bilingual reader watch flashcard Watch App/Preview Content\"";
+				DEVELOPMENT_TEAM = 74NNGKW9ES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "bilingual reader watch flashcard";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKWatchOnly = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "test.bilingual-reader-watch-flashcard.watchkitapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.5;
+			};
+			name = Debug;
+		};
+		2267AE17300C1AEA00D62DAB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"bilingual reader watch flashcard Watch App/Preview Content\"";
+				DEVELOPMENT_TEAM = 74NNGKW9ES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "bilingual reader watch flashcard";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKWatchOnly = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "test.bilingual-reader-watch-flashcard.watchkitapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 10.5;
+			};
+			name = Release;
+		};
+		2267AE1A300C1AEA00D62DAB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 74NNGKW9ES;
+				INFOPLIST_KEY_CFBundleDisplayName = "bilingual reader watch flashcard";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "test.bilingual-reader-watch-flashcard";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		2267AE1B300C1AEA00D62DAB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 74NNGKW9ES;
+				INFOPLIST_KEY_CFBundleDisplayName = "bilingual reader watch flashcard";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "test.bilingual-reader-watch-flashcard";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		2267AE1D300C1AEA00D62DAB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 74NNGKW9ES;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "test.bilingual-reader-watch-flashcard-Watch-AppTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/bilingual reader watch flashcard Watch App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/bilingual reader watch flashcard Watch App";
+				WATCHOS_DEPLOYMENT_TARGET = 10.5;
+			};
+			name = Debug;
+		};
+		2267AE1E300C1AEA00D62DAB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 74NNGKW9ES;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "test.bilingual-reader-watch-flashcard-Watch-AppTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/bilingual reader watch flashcard Watch App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/bilingual reader watch flashcard Watch App";
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 10.5;
+			};
+			name = Release;
+		};
+		2267AE20300C1AEA00D62DAB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 74NNGKW9ES;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "test.bilingual-reader-watch-flashcard-Watch-AppUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_TARGET_NAME = "bilingual reader watch flashcard Watch App";
+				WATCHOS_DEPLOYMENT_TARGET = 10.5;
+			};
+			name = Debug;
+		};
+		2267AE21300C1AEA00D62DAB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 74NNGKW9ES;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "test.bilingual-reader-watch-flashcard-Watch-AppUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_TARGET_NAME = "bilingual reader watch flashcard Watch App";
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 10.5;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		2267ADE6300C1AE800D62DAB /* Build configuration list for PBXProject "bilingual reader watch flashcard" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2267AE13300C1AEA00D62DAB /* Debug */,
+				2267AE14300C1AEA00D62DAB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		2267AE15300C1AEA00D62DAB /* Build configuration list for PBXNativeTarget "bilingual reader watch flashcard Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2267AE16300C1AEA00D62DAB /* Debug */,
+				2267AE17300C1AEA00D62DAB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		2267AE19300C1AEA00D62DAB /* Build configuration list for PBXNativeTarget "bilingual reader watch flashcard" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2267AE1A300C1AEA00D62DAB /* Debug */,
+				2267AE1B300C1AEA00D62DAB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		2267AE1C300C1AEA00D62DAB /* Build configuration list for PBXNativeTarget "bilingual reader watch flashcard Watch AppTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2267AE1D300C1AEA00D62DAB /* Debug */,
+				2267AE1E300C1AEA00D62DAB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		2267AE1F300C1AEA00D62DAB /* Build configuration list for PBXNativeTarget "bilingual reader watch flashcard Watch AppUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2267AE20300C1AEA00D62DAB /* Debug */,
+				2267AE21300C1AEA00D62DAB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 2267ADE3300C1AE800D62DAB /* Project object */;
+}
