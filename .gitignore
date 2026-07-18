@@ -1,0 +1,6 @@
+# Xcode / SPM
+DerivedData/
+.build/
+Packages/FSRS/.build/
+*.xcuserstate
+xcuserdata/

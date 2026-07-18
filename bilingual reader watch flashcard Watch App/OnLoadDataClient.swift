@@ -69,13 +69,19 @@ enum OnLoadDataClient {
 
         // Same idea as web initWords: sentenceId -> metadata from content[].content[]
         let sentenceById = buildSentenceMap(from: rawContent ?? [])
+        let now = Date()
 
-        return rawWords.compactMap { dict -> Word? in
-            guard let word = Word(dictionary: dict) else { return nil }
+        let mapped = rawWords.compactMap { dict -> Word? in
+            guard let word = Word(dictionary: dict, now: now) else { return nil }
             let sentenceId = word.contexts.first
             let sentence = sentenceId.flatMap { sentenceById[$0] }
             return word.withSentence(sentence)
         }
+
+        // Same filter as studying due cards on web: only isDue words
+        let dueWords = mapped.filter(\.isDue)
+        print("[getOnLoadData] \(language): \(dueWords.count)/\(mapped.count) due")
+        return dueWords.isEmpty ? nil : dueWords
     }
 
     /// Mirrors `initWords` sentenceId map, but keeps targetLang/baseLang instead of title.

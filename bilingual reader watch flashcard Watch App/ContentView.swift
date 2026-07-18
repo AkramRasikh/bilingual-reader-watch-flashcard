@@ -37,12 +37,16 @@ struct ContentView: View {
             }
             .navigationTitle("Languages")
             .navigationDestination(for: String.self) { language in
-                if let word = wordsByLanguage[language]?.randomElement() {
-                    FlashcardView(word: word)
-                } else {
-                    Text("No words for \(displayName(for: language))")
-                        .font(.caption2)
+                Group {
+                    if let word = wordsByLanguage[language]?.randomElement() {
+                        FlashcardView(word: word)
+                    } else {
+                        Text("No words for \(displayName(for: language))")
+                            .font(.caption2)
+                    }
                 }
+                .navigationBarBackButtonHidden(true)
+                .toolbar(.hidden, for: .navigationBar)
             }
         }
         .task {

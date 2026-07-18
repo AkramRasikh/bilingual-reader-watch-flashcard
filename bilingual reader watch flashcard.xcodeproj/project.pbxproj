@@ -13,6 +13,8 @@
 		2267AE21300C1AE900D62DAB /* OnLoadDataClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE20300C1AE900D62DAB /* OnLoadDataClient.swift */; };
 		2267AE24300C1AE900D62DAB /* Word.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE23300C1AE900D62DAB /* Word.swift */; };
 		2267AE26300C1AE900D62DAB /* FlashcardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE25300C1AE900D62DAB /* FlashcardView.swift */; };
+		2267AE34300C1AE900D62DAB /* VocabSRS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE33300C1AE900D62DAB /* VocabSRS.swift */; };
+		2267AE32300C1AE900D62DAB /* FSRS in Frameworks */ = {isa = PBXBuildFile; productRef = 2267AE31300C1AE900D62DAB /* FSRS */; };
 		2267ADF9300C1AE900D62DAB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2267ADF8300C1AE900D62DAB /* Assets.xcassets */; };
 		2267ADFC300C1AE900D62DAB /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2267ADFB300C1AE900D62DAB /* Preview Assets.xcassets */; };
 		2267AE06300C1AEA00D62DAB /* bilingual_reader_watch_flashcard_Watch_AppTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE05300C1AEA00D62DAB /* bilingual_reader_watch_flashcard_Watch_AppTests.swift */; };
@@ -67,6 +69,7 @@
 		2267AE22300C1AE900D62DAB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		2267AE23300C1AE900D62DAB /* Word.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Word.swift; sourceTree = "<group>"; };
 		2267AE25300C1AE900D62DAB /* FlashcardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlashcardView.swift; sourceTree = "<group>"; };
+		2267AE33300C1AE900D62DAB /* VocabSRS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VocabSRS.swift; sourceTree = "<group>"; };
 		2267ADF8300C1AE900D62DAB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2267ADFB300C1AE900D62DAB /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		2267AE01300C1AEA00D62DAB /* bilingual reader watch flashcard Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "bilingual reader watch flashcard Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -81,6 +84,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2267AE32300C1AE900D62DAB /* FSRS in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -129,6 +133,7 @@
 				2267ADF6300C1AE900D62DAB /* ContentView.swift */,
 				2267AE25300C1AE900D62DAB /* FlashcardView.swift */,
 				2267AE20300C1AE900D62DAB /* OnLoadDataClient.swift */,
+				2267AE33300C1AE900D62DAB /* VocabSRS.swift */,
 				2267AE23300C1AE900D62DAB /* Word.swift */,
 				2267AE22300C1AE900D62DAB /* Info.plist */,
 				2267ADF8300C1AE900D62DAB /* Assets.xcassets */,
@@ -195,6 +200,9 @@
 			dependencies = (
 			);
 			name = "bilingual reader watch flashcard Watch App";
+			packageProductDependencies = (
+				2267AE31300C1AE900D62DAB /* FSRS */,
+			);
 			productName = "bilingual reader watch flashcard Watch App";
 			productReference = 2267ADEF300C1AE900D62DAB /* bilingual reader watch flashcard Watch App.app */;
 			productType = "com.apple.product-type.application";
@@ -270,6 +278,9 @@
 				Base,
 			);
 			mainGroup = 2267ADE2300C1AE800D62DAB;
+			packageReferences = (
+				2267AE30300C1AE900D62DAB /* XCLocalSwiftPackageReference "Packages/FSRS" */,
+			);
 			productRefGroup = 2267ADEA300C1AE800D62DAB /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -325,6 +336,7 @@
 				2267AE21300C1AE900D62DAB /* OnLoadDataClient.swift in Sources */,
 				2267AE24300C1AE900D62DAB /* Word.swift in Sources */,
 				2267AE26300C1AE900D62DAB /* FlashcardView.swift in Sources */,
+				2267AE34300C1AE900D62DAB /* VocabSRS.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -709,6 +721,21 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		2267AE30300C1AE900D62DAB /* XCLocalSwiftPackageReference "Packages/FSRS" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/FSRS;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		2267AE31300C1AE900D62DAB /* FSRS */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FSRS;
+			package = 2267AE30300C1AE900D62DAB /* XCLocalSwiftPackageReference "Packages/FSRS" */;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 2267ADE3300C1AE800D62DAB /* Project object */;
 }
