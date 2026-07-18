@@ -10,6 +10,9 @@
 		2267ADF0300C1AE900D62DAB /* bilingual reader watch flashcard Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 2267ADEF300C1AE900D62DAB /* bilingual reader watch flashcard Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		2267ADF5300C1AE900D62DAB /* bilingual_reader_watch_flashcardApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267ADF4300C1AE900D62DAB /* bilingual_reader_watch_flashcardApp.swift */; };
 		2267ADF7300C1AE900D62DAB /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267ADF6300C1AE900D62DAB /* ContentView.swift */; };
+		2267AE21300C1AE900D62DAB /* OnLoadDataClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE20300C1AE900D62DAB /* OnLoadDataClient.swift */; };
+		2267AE24300C1AE900D62DAB /* Word.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE23300C1AE900D62DAB /* Word.swift */; };
+		2267AE26300C1AE900D62DAB /* FlashcardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE25300C1AE900D62DAB /* FlashcardView.swift */; };
 		2267ADF9300C1AE900D62DAB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2267ADF8300C1AE900D62DAB /* Assets.xcassets */; };
 		2267ADFC300C1AE900D62DAB /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2267ADFB300C1AE900D62DAB /* Preview Assets.xcassets */; };
 		2267AE06300C1AEA00D62DAB /* bilingual_reader_watch_flashcard_Watch_AppTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE05300C1AEA00D62DAB /* bilingual_reader_watch_flashcard_Watch_AppTests.swift */; };
@@ -60,6 +63,10 @@
 		2267ADEF300C1AE900D62DAB /* bilingual reader watch flashcard Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "bilingual reader watch flashcard Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		2267ADF4300C1AE900D62DAB /* bilingual_reader_watch_flashcardApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = bilingual_reader_watch_flashcardApp.swift; sourceTree = "<group>"; };
 		2267ADF6300C1AE900D62DAB /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		2267AE20300C1AE900D62DAB /* OnLoadDataClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnLoadDataClient.swift; sourceTree = "<group>"; };
+		2267AE22300C1AE900D62DAB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		2267AE23300C1AE900D62DAB /* Word.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Word.swift; sourceTree = "<group>"; };
+		2267AE25300C1AE900D62DAB /* FlashcardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlashcardView.swift; sourceTree = "<group>"; };
 		2267ADF8300C1AE900D62DAB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2267ADFB300C1AE900D62DAB /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		2267AE01300C1AEA00D62DAB /* bilingual reader watch flashcard Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "bilingual reader watch flashcard Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -120,6 +127,10 @@
 			children = (
 				2267ADF4300C1AE900D62DAB /* bilingual_reader_watch_flashcardApp.swift */,
 				2267ADF6300C1AE900D62DAB /* ContentView.swift */,
+				2267AE25300C1AE900D62DAB /* FlashcardView.swift */,
+				2267AE20300C1AE900D62DAB /* OnLoadDataClient.swift */,
+				2267AE23300C1AE900D62DAB /* Word.swift */,
+				2267AE22300C1AE900D62DAB /* Info.plist */,
 				2267ADF8300C1AE900D62DAB /* Assets.xcassets */,
 				2267ADFA300C1AE900D62DAB /* Preview Content */,
 			);
@@ -311,6 +322,9 @@
 			files = (
 				2267ADF7300C1AE900D62DAB /* ContentView.swift in Sources */,
 				2267ADF5300C1AE900D62DAB /* bilingual_reader_watch_flashcardApp.swift in Sources */,
+				2267AE21300C1AE900D62DAB /* OnLoadDataClient.swift in Sources */,
+				2267AE24300C1AE900D62DAB /* Word.swift in Sources */,
+				2267AE26300C1AE900D62DAB /* FlashcardView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -477,6 +491,7 @@
 				DEVELOPMENT_TEAM = 74NNGKW9ES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "bilingual reader watch flashcard Watch App/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "bilingual reader watch flashcard";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKWatchOnly = YES;
@@ -507,6 +522,7 @@
 				DEVELOPMENT_TEAM = 74NNGKW9ES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "bilingual reader watch flashcard Watch App/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "bilingual reader watch flashcard";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKWatchOnly = YES;
