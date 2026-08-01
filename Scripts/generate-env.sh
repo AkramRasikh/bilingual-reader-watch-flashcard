@@ -19,10 +19,12 @@ while IFS= read -r line || [[ -n "${line}" ]]; do
 done < "${ENV_FILE}"
 set +a
 
-if [[ -z "${GET_ON_LOAD_DATA_URL:-}" ]]; then
-  echo "error: GET_ON_LOAD_DATA_URL is not set in .env" >&2
-  exit 1
-fi
+for key in GET_ON_LOAD_DATA_URL UPDATE_WORD_URL DELETE_WORD_URL; do
+  if [[ -z "${!key:-}" ]]; then
+    echo "error: ${key} is not set in .env" >&2
+    exit 1
+  fi
+done
 
 mkdir -p "${OUT_DIR}"
 cat > "${OUT_FILE}" <<EOF
@@ -33,6 +35,8 @@ import Foundation
 
 enum GeneratedEnv {
     static let getOnLoadDataURL = URL(string: "${GET_ON_LOAD_DATA_URL}")!
+    static let updateWordURL = URL(string: "${UPDATE_WORD_URL}")!
+    static let deleteWordURL = URL(string: "${DELETE_WORD_URL}")!
 }
 EOF
 

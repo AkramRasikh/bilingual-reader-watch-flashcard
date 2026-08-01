@@ -12,9 +12,10 @@ enum OnLoadDataClient {
     /// Loaded from `.env` → `GeneratedEnv` at build time.
     private static let endpoint = GeneratedEnv.getOnLoadDataURL
 
-    /// Fetches words + content per language, maps `contexts[0]` → sentence like web `initWords`.
-    static func fetchWordsByLanguage() async throws -> [String: [Word]] {
-        var result: [String: [Word]] = [:]
+    /// Always fetch every language from the API and persist.
+    /// Returns the refreshed map, falling back to any existing cache when a language fails.
+    static func loadWordsByLanguage() async throws -> [String: [Word]] {
+        var result = LocalWordStore.loadAll()
 
         try await withThrowingTaskGroup(of: (String, [Word]?).self) { group in
             for language in knownLanguages {
@@ -26,7 +27,11 @@ enum OnLoadDataClient {
 
             for try await (language, words) in group {
                 if let words, !words.isEmpty {
+                    LocalWordStore.save(language: language, words: words)
                     result[language] = words
+                } else if result[language] == nil {
+                    // No cache and API returned nothing — leave empty.
+                    print("[getOnLoadData] no data for \(language)")
                 }
             }
         }

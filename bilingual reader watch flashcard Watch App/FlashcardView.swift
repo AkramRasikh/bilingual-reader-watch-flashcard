@@ -8,14 +8,20 @@ import FSRS
 
 struct FlashcardView: View {
     let word: Word
-
-    @Environment(\.dismiss) private var dismiss
+    var language: String = ""
+    var remainingCount: Int = 0
+    var onBack: () -> Void = {}
+    var onReviewed: (String) -> Void = { _ in }
+    var onDeleted: (String) -> Void = { _ in }
 
     @State private var isRevealed = false
     @State private var formsPage = 0
     @State private var actionsPage = 0
     @State private var expandedText: ExpandedText?
     @State private var gradeLabels: [Rating: String] = [:]
+    @State private var nextCards: [Rating: Card] = [:]
+    @State private var isSubmitting = false
+    @State private var errorMessage: String?
 
     private let gradeButtons: [Rating] = [.again, .hard, .good, .easy]
 
@@ -23,15 +29,14 @@ struct FlashcardView: View {
         VStack(spacing: 4) {
             // Compact back + definition, pinned high
             HStack(alignment: .top, spacing: 4) {
-                Button {
-                    dismiss()
-                } label: {
+                Button(action: onBack) {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.system(size: 12, weight: .bold))
+                        .frame(width: 28, height: 28)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .frame(width: 14, height: 14)
-                .padding(.top, 1)
+                .accessibilityLabel("Back")
 
                 Text(word.definition)
                     .font(.caption2)
@@ -46,6 +51,13 @@ struct FlashcardView: View {
                             body: word.definition
                         )
                     }
+
+                if remainingCount > 0 {
+                    Text("\(remainingCount)")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 2)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -77,16 +89,24 @@ struct FlashcardView: View {
                     )
                 }
                 .accessibilityLabel(isRevealed ? "Answer revealed" : "Answer hidden, tap to reveal")
+                .opacity(isSubmitting ? 0.45 : 1)
 
             Spacer(minLength: 0)
 
-            // Bottom — swipe between SRS grades and delete (no TabView; labels update reliably)
+            if let errorMessage {
+                Text(errorMessage)
+                    .font(.system(size: 9))
+                    .foregroundStyle(.red)
+                    .lineLimit(2)
+            }
+
+            // Bottom — swipe between SRS grades and delete (web ReviewSRSToggles)
             Group {
                 if actionsPage == 0 {
                     HStack(spacing: 4) {
                         ForEach(gradeButtons, id: \.self) { rating in
                             Button {
-                                print("[vocab SRS] \(rating.stringValue) -> \(gradeLabels[rating] ?? "?")")
+                                Task { await submitGrade(rating) }
                             } label: {
                                 Text(gradeLabels[rating] ?? "…")
                                     .font(.system(size: 10).weight(.semibold))
@@ -95,11 +115,12 @@ struct FlashcardView: View {
                                     .frame(maxWidth: .infinity)
                             }
                             .buttonStyle(.bordered)
+                            .disabled(isSubmitting || nextCards[rating] == nil)
                         }
                     }
                 } else {
                     Button {
-                        print("[vocab SRS] delete word \(word.id)")
+                        Task { await submitDelete() }
                     } label: {
                         Image(systemName: "trash.fill")
                             .font(.system(size: 14).weight(.semibold))
@@ -108,11 +129,13 @@ struct FlashcardView: View {
                     }
                     .buttonStyle(.bordered)
                     .tint(Color(red: 0.85, green: 0.65, blue: 0.13))
+                    .disabled(isSubmitting)
                 }
             }
             .frame(height: 36)
             .gesture(actionsSwipeGesture)
             .background(.background)
+            .opacity(isSubmitting ? 0.45 : 1)
         }
         .padding(.horizontal, 0)
         .padding(.top, -2)
@@ -129,6 +152,10 @@ struct FlashcardView: View {
             }
         }
         .task(id: word.id) {
+            isRevealed = false
+            formsPage = 0
+            actionsPage = 0
+            errorMessage = nil
             await computeNextReviews()
         }
     }
@@ -185,6 +212,7 @@ struct FlashcardView: View {
         guard let card = word.card else {
             print("[vocab SRS] no reviewData/card for word \(word.id)")
             gradeLabels = Dictionary(uniqueKeysWithValues: gradeButtons.map { ($0, "—") })
+            nextCards = [:]
             return
         }
 
@@ -192,13 +220,16 @@ struct FlashcardView: View {
         print("[vocab SRS] current due = \(card.due)")
 
         do {
-            let options = try VocabSRS.nextReviewOptions(card: card, now: now)
+            let cards = try VocabSRS.nextReviewCards(card: card, now: now)
+            nextCards = cards
             var labels: [Rating: String] = [:]
             for rating in gradeButtons {
-                if let due = options[rating] {
-                    let label = VocabSRS.relativeLabel(from: now, to: due)
+                if let card = cards[rating] {
+                    // Label uses the same due the user would persist (incl. 5am snap).
+                    let persistDue = VocabSRS.cardForPersist(card, now: now).due
+                    let label = VocabSRS.relativeLabel(from: now, to: persistDue)
                     labels[rating] = label
-                    print("[vocab SRS] \(rating.stringValue) -> \(due) (\(label))")
+                    print("[vocab SRS] \(rating.stringValue) -> \(persistDue) (\(label))")
                 } else {
                     labels[rating] = "—"
                 }
@@ -207,6 +238,45 @@ struct FlashcardView: View {
         } catch {
             print("[vocab SRS] failed to schedule: \(error)")
             gradeLabels = Dictionary(uniqueKeysWithValues: gradeButtons.map { ($0, "—") })
+            nextCards = [:]
+        }
+    }
+
+    @MainActor
+    private func submitGrade(_ rating: Rating) async {
+        guard !isSubmitting, let next = nextCards[rating] else { return }
+        isSubmitting = true
+        errorMessage = nil
+        defer { isSubmitting = false }
+
+        do {
+            try await WordReviewClient.updateReviewData(
+                wordId: word.id,
+                language: language,
+                card: next
+            )
+            print("[vocab SRS] saved \(rating.stringValue) for \(word.id)")
+            onReviewed(word.id)
+        } catch {
+            print("[vocab SRS] update failed: \(error)")
+            errorMessage = "Save failed"
+        }
+    }
+
+    @MainActor
+    private func submitDelete() async {
+        guard !isSubmitting else { return }
+        isSubmitting = true
+        errorMessage = nil
+        defer { isSubmitting = false }
+
+        do {
+            try await WordReviewClient.deleteWord(wordId: word.id, language: language)
+            print("[vocab SRS] deleted \(word.id)")
+            onDeleted(word.id)
+        } catch {
+            print("[vocab SRS] delete failed: \(error)")
+            errorMessage = "Delete failed"
         }
     }
 
@@ -357,6 +427,8 @@ private extension Rating {
         ], sentence: SentenceContext(
             targetLang: "是我们的荣幸",
             baseLang: "It's our honor"
-        ))!
+        ))!,
+        language: "chinese",
+        remainingCount: 7
     )
 }

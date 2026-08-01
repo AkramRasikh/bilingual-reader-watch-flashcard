@@ -6,12 +6,12 @@
 import Foundation
 import FSRS
 
-struct SentenceContext: Hashable {
+struct SentenceContext: Hashable, Codable {
     let targetLang: String
     let baseLang: String
 }
 
-struct Word: Identifiable, Hashable {
+struct Word: Identifiable, Hashable, Codable {
     let id: String
     let definition: String
     let baseForm: String
@@ -70,6 +70,22 @@ struct Word: Identifiable, Hashable {
             sentence: sentence,
             card: card,
             isDue: isDue
+        )
+    }
+
+    /// Recompute `isDue` from `card.due` (for cache loads).
+    func withFreshDue(now: Date = Date()) -> Word {
+        Word(
+            id: id,
+            definition: definition,
+            baseForm: baseForm,
+            surfaceForm: surfaceForm,
+            transliteration: transliteration,
+            mnemonic: mnemonic,
+            contexts: contexts,
+            sentence: sentence,
+            card: card,
+            isDue: card.map { $0.due < now } ?? false
         )
     }
 
