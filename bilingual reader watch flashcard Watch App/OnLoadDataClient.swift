@@ -9,11 +9,8 @@ enum OnLoadDataClient {
     /// Matches backend `LanguageTypes` / language validation keys.
     static let knownLanguages = ["arabic", "chinese", "french", "japanese"]
 
-    /// Firebase emulator URL for getOnLoadData.
-    /// Watch simulator → Mac localhost. Physical watch needs your Mac LAN IP instead.
-    private static let endpoint = URL(
-        string: "http://127.0.0.1:5001/language-content-storage/us-central1/getOnLoadData"
-    )!
+    /// Loaded from `.env` → `GeneratedEnv` at build time.
+    private static let endpoint = GeneratedEnv.getOnLoadDataURL
 
     /// Fetches words + content per language, maps `contexts[0]` → sentence like web `initWords`.
     static func fetchWordsByLanguage() async throws -> [String: [Word]] {

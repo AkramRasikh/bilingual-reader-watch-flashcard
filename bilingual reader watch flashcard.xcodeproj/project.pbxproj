@@ -3,23 +3,24 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
 		2267ADF0300C1AE900D62DAB /* bilingual reader watch flashcard Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 2267ADEF300C1AE900D62DAB /* bilingual reader watch flashcard Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		2267ADF5300C1AE900D62DAB /* bilingual_reader_watch_flashcardApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267ADF4300C1AE900D62DAB /* bilingual_reader_watch_flashcardApp.swift */; };
 		2267ADF7300C1AE900D62DAB /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267ADF6300C1AE900D62DAB /* ContentView.swift */; };
-		2267AE21300C1AE900D62DAB /* OnLoadDataClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE20300C1AE900D62DAB /* OnLoadDataClient.swift */; };
-		2267AE24300C1AE900D62DAB /* Word.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE23300C1AE900D62DAB /* Word.swift */; };
-		2267AE26300C1AE900D62DAB /* FlashcardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE25300C1AE900D62DAB /* FlashcardView.swift */; };
-		2267AE34300C1AE900D62DAB /* VocabSRS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE33300C1AE900D62DAB /* VocabSRS.swift */; };
-		2267AE32300C1AE900D62DAB /* FSRS in Frameworks */ = {isa = PBXBuildFile; productRef = 2267AE31300C1AE900D62DAB /* FSRS */; };
 		2267ADF9300C1AE900D62DAB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2267ADF8300C1AE900D62DAB /* Assets.xcassets */; };
 		2267ADFC300C1AE900D62DAB /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2267ADFB300C1AE900D62DAB /* Preview Assets.xcassets */; };
 		2267AE06300C1AEA00D62DAB /* bilingual_reader_watch_flashcard_Watch_AppTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE05300C1AEA00D62DAB /* bilingual_reader_watch_flashcard_Watch_AppTests.swift */; };
 		2267AE10300C1AEA00D62DAB /* bilingual_reader_watch_flashcard_Watch_AppUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE0F300C1AEA00D62DAB /* bilingual_reader_watch_flashcard_Watch_AppUITests.swift */; };
 		2267AE12300C1AEA00D62DAB /* bilingual_reader_watch_flashcard_Watch_AppUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE11300C1AEA00D62DAB /* bilingual_reader_watch_flashcard_Watch_AppUITestsLaunchTests.swift */; };
+		2267AE21300C1AE900D62DAB /* OnLoadDataClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE20300C1AE900D62DAB /* OnLoadDataClient.swift */; };
+		2267AE24300C1AE900D62DAB /* Word.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE23300C1AE900D62DAB /* Word.swift */; };
+		2267AE26300C1AE900D62DAB /* FlashcardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE25300C1AE900D62DAB /* FlashcardView.swift */; };
+		2267AE32300C1AE900D62DAB /* FSRS in Frameworks */ = {isa = PBXBuildFile; productRef = 2267AE31300C1AE900D62DAB /* FSRS */; };
+		2267AE34300C1AE900D62DAB /* VocabSRS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE33300C1AE900D62DAB /* VocabSRS.swift */; };
+		2267AE36300C1AE900D62DAB /* GeneratedEnv.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE35300C1AE900D62DAB /* GeneratedEnv.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -65,11 +66,6 @@
 		2267ADEF300C1AE900D62DAB /* bilingual reader watch flashcard Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "bilingual reader watch flashcard Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		2267ADF4300C1AE900D62DAB /* bilingual_reader_watch_flashcardApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = bilingual_reader_watch_flashcardApp.swift; sourceTree = "<group>"; };
 		2267ADF6300C1AE900D62DAB /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		2267AE20300C1AE900D62DAB /* OnLoadDataClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnLoadDataClient.swift; sourceTree = "<group>"; };
-		2267AE22300C1AE900D62DAB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		2267AE23300C1AE900D62DAB /* Word.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Word.swift; sourceTree = "<group>"; };
-		2267AE25300C1AE900D62DAB /* FlashcardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlashcardView.swift; sourceTree = "<group>"; };
-		2267AE33300C1AE900D62DAB /* VocabSRS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VocabSRS.swift; sourceTree = "<group>"; };
 		2267ADF8300C1AE900D62DAB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2267ADFB300C1AE900D62DAB /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		2267AE01300C1AEA00D62DAB /* bilingual reader watch flashcard Watch AppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "bilingual reader watch flashcard Watch AppTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -77,6 +73,12 @@
 		2267AE0B300C1AEA00D62DAB /* bilingual reader watch flashcard Watch AppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "bilingual reader watch flashcard Watch AppUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		2267AE0F300C1AEA00D62DAB /* bilingual_reader_watch_flashcard_Watch_AppUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = bilingual_reader_watch_flashcard_Watch_AppUITests.swift; sourceTree = "<group>"; };
 		2267AE11300C1AEA00D62DAB /* bilingual_reader_watch_flashcard_Watch_AppUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = bilingual_reader_watch_flashcard_Watch_AppUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		2267AE20300C1AE900D62DAB /* OnLoadDataClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnLoadDataClient.swift; sourceTree = "<group>"; };
+		2267AE22300C1AE900D62DAB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		2267AE23300C1AE900D62DAB /* Word.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Word.swift; sourceTree = "<group>"; };
+		2267AE25300C1AE900D62DAB /* FlashcardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlashcardView.swift; sourceTree = "<group>"; };
+		2267AE33300C1AE900D62DAB /* VocabSRS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VocabSRS.swift; sourceTree = "<group>"; };
+		2267AE35300C1AE900D62DAB /* GeneratedEnv.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneratedEnv.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -133,6 +135,7 @@
 				2267ADF6300C1AE900D62DAB /* ContentView.swift */,
 				2267AE25300C1AE900D62DAB /* FlashcardView.swift */,
 				2267AE20300C1AE900D62DAB /* OnLoadDataClient.swift */,
+				2267AE35300C1AE900D62DAB /* GeneratedEnv.swift */,
 				2267AE33300C1AE900D62DAB /* VocabSRS.swift */,
 				2267AE23300C1AE900D62DAB /* Word.swift */,
 				2267AE22300C1AE900D62DAB /* Info.plist */,
@@ -191,6 +194,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 2267AE15300C1AEA00D62DAB /* Build configuration list for PBXNativeTarget "bilingual reader watch flashcard Watch App" */;
 			buildPhases = (
+				2267AE37300C1AE900D62DAB /* Generate Env from .env */,
 				2267ADEB300C1AE900D62DAB /* Sources */,
 				2267ADEC300C1AE900D62DAB /* Frameworks */,
 				2267ADED300C1AE900D62DAB /* Resources */,
@@ -251,7 +255,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1540;
-				LastUpgradeCheck = 1540;
+				LastUpgradeCheck = 2660;
 				TargetAttributes = {
 					2267ADE8300C1AE800D62DAB = {
 						CreatedOnToolsVersion = 15.4;
@@ -326,6 +330,31 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		2267AE37300C1AE900D62DAB /* Generate Env from .env */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/.env",
+				"$(SRCROOT)/Scripts/generate-env.sh",
+			);
+			name = "Generate Env from .env";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(SRCROOT)/bilingual reader watch flashcard Watch App/GeneratedEnv.swift",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Scripts/generate-env.sh\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		2267ADEB300C1AE900D62DAB /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -337,6 +366,7 @@
 				2267AE24300C1AE900D62DAB /* Word.swift in Sources */,
 				2267AE26300C1AE900D62DAB /* FlashcardView.swift in Sources */,
 				2267AE34300C1AE900D62DAB /* VocabSRS.swift in Sources */,
+				2267AE36300C1AE900D62DAB /* GeneratedEnv.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -412,7 +442,9 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 74NNGKW9ES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -434,6 +466,7 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -473,7 +506,9 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 74NNGKW9ES;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -488,6 +523,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 			};
 			name = Release;
@@ -500,7 +536,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"bilingual reader watch flashcard Watch App/Preview Content\"";
-				DEVELOPMENT_TEAM = 74NNGKW9ES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "bilingual reader watch flashcard Watch App/Info.plist";
@@ -519,7 +554,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 10.5;
+				WATCHOS_DEPLOYMENT_TARGET = 10.6;
 			};
 			name = Debug;
 		};
@@ -531,7 +566,6 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"bilingual reader watch flashcard Watch App/Preview Content\"";
-				DEVELOPMENT_TEAM = 74NNGKW9ES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "bilingual reader watch flashcard Watch App/Info.plist";
@@ -551,39 +585,49 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				VALIDATE_PRODUCT = YES;
-				WATCHOS_DEPLOYMENT_TARGET = 10.5;
+				WATCHOS_DEPLOYMENT_TARGET = 10.6;
 			};
 			name = Release;
 		};
 		2267AE1A300C1AEA00D62DAB /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 74NNGKW9ES;
+				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "bilingual reader watch flashcard";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "test.bilingual-reader-watch-flashcard";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
 		2267AE1B300C1AEA00D62DAB /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 74NNGKW9ES;
+				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "bilingual reader watch flashcard";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "test.bilingual-reader-watch-flashcard";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
@@ -591,11 +635,9 @@
 		2267AE1D300C1AEA00D62DAB /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 74NNGKW9ES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "test.bilingual-reader-watch-flashcard-Watch-AppTests";
@@ -612,11 +654,9 @@
 		2267AE1E300C1AEA00D62DAB /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 74NNGKW9ES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "test.bilingual-reader-watch-flashcard-Watch-AppTests";
@@ -634,10 +674,8 @@
 		2267AE20300C1AEA00D62DAB /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 74NNGKW9ES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "test.bilingual-reader-watch-flashcard-Watch-AppUITests";
@@ -654,10 +692,8 @@
 		2267AE21300C1AEA00D62DAB /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 74NNGKW9ES;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "test.bilingual-reader-watch-flashcard-Watch-AppUITests";
@@ -732,8 +768,8 @@
 /* Begin XCSwiftPackageProductDependency section */
 		2267AE31300C1AE900D62DAB /* FSRS */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = FSRS;
 			package = 2267AE30300C1AE900D62DAB /* XCLocalSwiftPackageReference "Packages/FSRS" */;
+			productName = FSRS;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
