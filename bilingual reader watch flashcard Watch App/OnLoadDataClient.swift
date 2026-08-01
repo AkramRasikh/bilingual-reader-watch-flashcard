@@ -14,23 +14,22 @@ enum OnLoadDataClient {
 
     /// Always fetch every language from the API and persist.
     /// Returns the refreshed map, falling back to any existing cache when a language fails.
-    static func loadWordsByLanguage() async throws -> [String: [Word]] {
+    static func loadBundlesByLanguage() async throws -> [String: LanguageBundle] {
         var result = LocalWordStore.loadAll()
 
-        try await withThrowingTaskGroup(of: (String, [Word]?).self) { group in
+        try await withThrowingTaskGroup(of: (String, LanguageBundle?).self) { group in
             for language in knownLanguages {
                 group.addTask {
-                    let words = try await fetchAndMapWords(language: language)
-                    return (language, words)
+                    let bundle = try await fetchBundle(language: language)
+                    return (language, bundle)
                 }
             }
 
-            for try await (language, words) in group {
-                if let words, !words.isEmpty {
-                    LocalWordStore.save(language: language, words: words)
-                    result[language] = words
+            for try await (language, bundle) in group {
+                if let bundle, !bundle.words.isEmpty {
+                    LocalWordStore.save(language: language, bundle: bundle)
+                    result[language] = bundle
                 } else if result[language] == nil {
-                    // No cache and API returned nothing — leave empty.
                     print("[getOnLoadData] no data for \(language)")
                 }
             }
@@ -39,7 +38,7 @@ enum OnLoadDataClient {
         return result
     }
 
-    private static func fetchAndMapWords(language: String) async throws -> [Word]? {
+    private static func fetchBundle(language: String) async throws -> LanguageBundle? {
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -69,7 +68,7 @@ enum OnLoadDataClient {
 
         guard let rawWords else { return nil }
 
-        // Same idea as web initWords: sentenceId -> metadata from content[].content[]
+        let topics = buildTopics(from: rawContent ?? [])
         let sentenceById = buildSentenceMap(from: rawContent ?? [])
         let now = Date()
 
@@ -80,10 +79,27 @@ enum OnLoadDataClient {
             return word.withSentence(sentence)
         }
 
-        // Same filter as studying due cards on web: only isDue words
         let dueWords = mapped.filter(\.isDue)
-        print("[getOnLoadData] \(language): \(dueWords.count)/\(mapped.count) due")
-        return dueWords.isEmpty ? nil : dueWords
+        print("[getOnLoadData] \(language): \(dueWords.count)/\(mapped.count) due, \(topics.count) topics")
+        guard !dueWords.isEmpty else { return nil }
+
+        return LanguageBundle(words: dueWords, topics: topics)
+    }
+
+    /// Content rows: id + title + sentence ids (for word → content join).
+    private static func buildTopics(from contentItems: [[String: Any]]) -> [ContentTopic] {
+        contentItems.compactMap { item in
+            let id = item["id"] as? String ?? ""
+            let title = item["title"] as? String ?? ""
+            let sentences = item["content"] as? [[String: Any]] ?? []
+            let sentenceIds = sentences.compactMap { $0["id"] as? String }
+            guard !id.isEmpty, !sentenceIds.isEmpty else { return nil }
+            return ContentTopic(
+                id: id,
+                title: title.isEmpty ? "Untitled" : title,
+                sentenceIds: sentenceIds
+            )
+        }
     }
 
     /// Mirrors `initWords` sentenceId map, but keeps targetLang/baseLang instead of title.

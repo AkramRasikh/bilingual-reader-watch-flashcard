@@ -10,7 +10,7 @@ import Foundation
 enum LocalWordStore {
     private static let folderName = "word-cache"
 
-    static func load(language: String) -> [Word]? {
+    static func load(language: String) -> LanguageBundle? {
         guard let url = fileURL(for: language),
               let data = try? Data(contentsOf: url)
         else {
@@ -18,44 +18,38 @@ enum LocalWordStore {
         }
 
         do {
-            let words = try JSONDecoder().decode([Word].self, from: data)
-            let fresh = words.map { $0.withFreshDue() }.filter(\.isDue)
-            return fresh.isEmpty ? nil : fresh
+            var bundle = try JSONDecoder().decode(LanguageBundle.self, from: data)
+            bundle.words = bundle.words.map { $0.withFreshDue() }.filter(\.isDue)
+            return bundle.words.isEmpty ? nil : bundle
         } catch {
             print("[LocalWordStore] decode \(language) failed: \(error)")
             return nil
         }
     }
 
-    static func save(language: String, words: [Word]) {
+    static func save(language: String, bundle: LanguageBundle) {
         guard let url = fileURL(for: language) else { return }
         do {
             try FileManager.default.createDirectory(
                 at: url.deletingLastPathComponent(),
                 withIntermediateDirectories: true
             )
-            let data = try JSONEncoder().encode(words)
+            let data = try JSONEncoder().encode(bundle)
             try data.write(to: url, options: [.atomic])
-            print("[LocalWordStore] saved \(words.count) words for \(language)")
+            print("[LocalWordStore] saved \(bundle.words.count) words / \(bundle.topics.count) topics for \(language)")
         } catch {
             print("[LocalWordStore] save \(language) failed: \(error)")
         }
     }
 
-    static func loadAll() -> [String: [Word]] {
-        var result: [String: [Word]] = [:]
+    static func loadAll() -> [String: LanguageBundle] {
+        var result: [String: LanguageBundle] = [:]
         for language in OnLoadDataClient.knownLanguages {
-            if let words = load(language: language) {
-                result[language] = words
+            if let bundle = load(language: language) {
+                result[language] = bundle
             }
         }
         return result
-    }
-
-    static func saveAll(_ wordsByLanguage: [String: [Word]]) {
-        for (language, words) in wordsByLanguage {
-            save(language: language, words: words)
-        }
     }
 
     private static func fileURL(for language: String) -> URL? {
@@ -65,8 +59,9 @@ enum LocalWordStore {
         ).first else {
             return nil
         }
+        // New format (words + topics). Old `{language}-words.json` is ignored.
         return root
             .appendingPathComponent(folderName, isDirectory: true)
-            .appendingPathComponent("\(language)-words.json", isDirectory: false)
+            .appendingPathComponent("\(language)-bundle.json", isDirectory: false)
     }
 }

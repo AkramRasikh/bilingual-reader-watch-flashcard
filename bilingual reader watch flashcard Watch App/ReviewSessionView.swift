@@ -2,7 +2,7 @@
 //  ReviewSessionView.swift
 //  bilingual reader watch flashcard Watch App
 //
-//  Queues due words for a language; after grade/delete advances like web due list shrinks.
+//  Queues due words; after grade/delete advances like web due list shrinks.
 //
 
 import SwiftUI
@@ -11,7 +11,8 @@ struct ReviewSessionView: View {
     let language: String
     let initialWords: [Word]
     var onBack: () -> Void = {}
-    var onQueueChanged: ([Word]) -> Void = { _ in }
+    /// Called with the reviewed/deleted word id so the parent can update the language bundle.
+    var onWordRemoved: (String) -> Void = { _ in }
 
     @State private var queue: [Word] = []
     @State private var didInit = false
@@ -50,7 +51,6 @@ struct ReviewSessionView: View {
 
     private func removeFromQueue(wordId: String) {
         queue.removeAll { $0.id == wordId }
-        onQueueChanged(queue)
-        LocalWordStore.save(language: language, words: queue)
+        onWordRemoved(wordId)
     }
 }

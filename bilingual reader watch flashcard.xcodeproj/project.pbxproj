@@ -24,6 +24,8 @@
 		2267AE39300C1AE900D62DAB /* LocalWordStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE38300C1AE900D62DAB /* LocalWordStore.swift */; };
 		2267AE3B300C1AE900D62DAB /* WordReviewClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE3A300C1AE900D62DAB /* WordReviewClient.swift */; };
 		2267AE3D300C1AE900D62DAB /* ReviewSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE3C300C1AE900D62DAB /* ReviewSessionView.swift */; };
+		2267AE3F300C1AE900D62DAB /* LanguageBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE3E300C1AE900D62DAB /* LanguageBundle.swift */; };
+		2267AE41300C1AE900D62DAB /* LanguageTopicsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE40300C1AE900D62DAB /* LanguageTopicsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -85,6 +87,8 @@
 		2267AE38300C1AE900D62DAB /* LocalWordStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalWordStore.swift; sourceTree = "<group>"; };
 		2267AE3A300C1AE900D62DAB /* WordReviewClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordReviewClient.swift; sourceTree = "<group>"; };
 		2267AE3C300C1AE900D62DAB /* ReviewSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewSessionView.swift; sourceTree = "<group>"; };
+		2267AE3E300C1AE900D62DAB /* LanguageBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageBundle.swift; sourceTree = "<group>"; };
+		2267AE40300C1AE900D62DAB /* LanguageTopicsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageTopicsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -144,8 +148,10 @@
 				2267AE3A300C1AE900D62DAB /* WordReviewClient.swift */,
 				2267AE35300C1AE900D62DAB /* GeneratedEnv.swift */,
 				2267AE38300C1AE900D62DAB /* LocalWordStore.swift */,
+				2267AE3E300C1AE900D62DAB /* LanguageBundle.swift */,
 				2267AE33300C1AE900D62DAB /* VocabSRS.swift */,
 				2267AE23300C1AE900D62DAB /* Word.swift */,
+				2267AE40300C1AE900D62DAB /* LanguageTopicsView.swift */,
 				2267AE3C300C1AE900D62DAB /* ReviewSessionView.swift */,
 				2267AE22300C1AE900D62DAB /* Info.plist */,
 				2267ADF8300C1AE900D62DAB /* Assets.xcassets */,
@@ -379,6 +385,8 @@
 				2267AE39300C1AE900D62DAB /* LocalWordStore.swift in Sources */,
 				2267AE3B300C1AE900D62DAB /* WordReviewClient.swift in Sources */,
 				2267AE3D300C1AE900D62DAB /* ReviewSessionView.swift in Sources */,
+				2267AE3F300C1AE900D62DAB /* LanguageBundle.swift in Sources */,
+				2267AE41300C1AE900D62DAB /* LanguageTopicsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
