@@ -26,6 +26,7 @@
 		2267AE3D300C1AE900D62DAB /* ReviewSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE3C300C1AE900D62DAB /* ReviewSessionView.swift */; };
 		2267AE3F300C1AE900D62DAB /* LanguageBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE3E300C1AE900D62DAB /* LanguageBundle.swift */; };
 		2267AE41300C1AE900D62DAB /* LanguageTopicsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE40300C1AE900D62DAB /* LanguageTopicsView.swift */; };
+		2267AE43300C1AE900D62DAB /* WordAudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE42300C1AE900D62DAB /* WordAudioPlayer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -89,6 +90,7 @@
 		2267AE3C300C1AE900D62DAB /* ReviewSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewSessionView.swift; sourceTree = "<group>"; };
 		2267AE3E300C1AE900D62DAB /* LanguageBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageBundle.swift; sourceTree = "<group>"; };
 		2267AE40300C1AE900D62DAB /* LanguageTopicsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageTopicsView.swift; sourceTree = "<group>"; };
+		2267AE42300C1AE900D62DAB /* WordAudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordAudioPlayer.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -146,6 +148,7 @@
 				2267AE25300C1AE900D62DAB /* FlashcardView.swift */,
 				2267AE20300C1AE900D62DAB /* OnLoadDataClient.swift */,
 				2267AE3A300C1AE900D62DAB /* WordReviewClient.swift */,
+				2267AE42300C1AE900D62DAB /* WordAudioPlayer.swift */,
 				2267AE35300C1AE900D62DAB /* GeneratedEnv.swift */,
 				2267AE38300C1AE900D62DAB /* LocalWordStore.swift */,
 				2267AE3E300C1AE900D62DAB /* LanguageBundle.swift */,
@@ -387,6 +390,7 @@
 				2267AE3D300C1AE900D62DAB /* ReviewSessionView.swift in Sources */,
 				2267AE3F300C1AE900D62DAB /* LanguageBundle.swift in Sources */,
 				2267AE41300C1AE900D62DAB /* LanguageTopicsView.swift in Sources */,
+				2267AE43300C1AE900D62DAB /* WordAudioPlayer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

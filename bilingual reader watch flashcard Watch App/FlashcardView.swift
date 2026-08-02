@@ -14,6 +14,7 @@ struct FlashcardView: View {
     var onReviewed: (String) -> Void = { _ in }
     var onDeleted: (String) -> Void = { _ in }
 
+    @ObservedObject private var audioPlayer = WordAudioPlayer.shared
     @State private var isRevealed = false
     @State private var formsPage = 0
     @State private var actionsPage = 0
@@ -25,9 +26,19 @@ struct FlashcardView: View {
 
     private let gradeButtons: [Rating] = [.again, .hard, .good, .easy]
 
+    private var isThisWordPlaying: Bool {
+        guard word.canPlayAudio,
+              let fileName = word.audioFileName,
+              let cue = word.playAt,
+              let url = WordAudioPlayer.audioURL(fileName: fileName, language: language)
+        else { return false }
+        let key = "\(url.absoluteString)#\(cue)"
+        return audioPlayer.isPlaying && audioPlayer.activeKey == key
+    }
+
     var body: some View {
         VStack(spacing: 4) {
-            // Compact back + definition, pinned high
+            // Compact back + definition + play + count
             HStack(alignment: .top, spacing: 4) {
                 Button(action: onBack) {
                     Image(systemName: "chevron.left")
@@ -51,6 +62,22 @@ struct FlashcardView: View {
                             body: word.definition
                         )
                     }
+
+                if word.canPlayAudio {
+                    Button {
+                        guard let fileName = word.audioFileName,
+                              let cue = word.playAt
+                        else { return }
+                        audioPlayer.toggle(fileName: fileName, language: language, cue: cue)
+                    } label: {
+                        Image(systemName: isThisWordPlaying ? "pause.fill" : "play.fill")
+                            .font(.system(size: 12, weight: .bold))
+                            .frame(width: 28, height: 28)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(isThisWordPlaying ? "Pause" : "Play")
+                }
 
                 if remainingCount > 0 {
                     Text("\(remainingCount)")
@@ -156,6 +183,7 @@ struct FlashcardView: View {
             formsPage = 0
             actionsPage = 0
             errorMessage = nil
+            audioPlayer.stop()
             await computeNextReviews()
         }
     }
@@ -256,6 +284,7 @@ struct FlashcardView: View {
                 card: next
             )
             print("[vocab SRS] saved \(rating.stringValue) for \(word.id)")
+            audioPlayer.stop()
             onReviewed(word.id)
         } catch {
             print("[vocab SRS] update failed: \(error)")
@@ -273,6 +302,7 @@ struct FlashcardView: View {
         do {
             try await WordReviewClient.deleteWord(wordId: word.id, language: language)
             print("[vocab SRS] deleted \(word.id)")
+            audioPlayer.stop()
             onDeleted(word.id)
         } catch {
             print("[vocab SRS] delete failed: \(error)")
@@ -426,7 +456,8 @@ private extension Rating {
             ],
         ], sentence: SentenceContext(
             targetLang: "是我们的荣幸",
-            baseLang: "It's our honor"
+            baseLang: "It's our honor",
+            time: 12.5
         ))!,
         language: "chinese",
         remainingCount: 7

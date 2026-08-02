@@ -9,6 +9,8 @@ import FSRS
 struct SentenceContext: Hashable, Codable {
     let targetLang: String
     let baseLang: String
+    /// Seconds into the topic audio (web sentence `time`).
+    let time: TimeInterval?
 }
 
 struct Word: Identifiable, Hashable, Codable {
@@ -26,8 +28,17 @@ struct Word: Identifiable, Hashable, Codable {
     let card: Card?
     /// Mirrors web `initWords` / `isDueCheck`: due exists and is strictly before now.
     let isDue: Bool
+    /// Topic title used as Cloudflare audio basename (`{title}.mp3`).
+    let audioFileName: String?
+    /// Seek time into the topic MP3 (snippet cue preferred, else sentence time).
+    let playAt: TimeInterval?
 
     var dueDate: Date? { card?.due }
+
+    var canPlayAudio: Bool {
+        guard let audioFileName, !audioFileName.isEmpty, playAt != nil else { return false }
+        return true
+    }
 
     init?(dictionary: [String: Any], sentence: SentenceContext? = nil, now: Date = Date()) {
         let id = dictionary["id"] as? String ?? UUID().uuidString
@@ -54,8 +65,9 @@ struct Word: Identifiable, Hashable, Codable {
         self.contexts = contexts
         self.sentence = sentence
         self.card = card
-        // Same as web isDueCheck: missing due => false; due < now => true
         self.isDue = card.map { $0.due < now } ?? false
+        self.audioFileName = nil
+        self.playAt = nil
     }
 
     func withSentence(_ sentence: SentenceContext?) -> Word {
@@ -69,7 +81,26 @@ struct Word: Identifiable, Hashable, Codable {
             contexts: contexts,
             sentence: sentence,
             card: card,
-            isDue: isDue
+            isDue: isDue,
+            audioFileName: audioFileName,
+            playAt: playAt
+        )
+    }
+
+    func withAudio(fileName: String?, playAt: TimeInterval?) -> Word {
+        Word(
+            id: id,
+            definition: definition,
+            baseForm: baseForm,
+            surfaceForm: surfaceForm,
+            transliteration: transliteration,
+            mnemonic: mnemonic,
+            contexts: contexts,
+            sentence: sentence,
+            card: card,
+            isDue: isDue,
+            audioFileName: fileName,
+            playAt: playAt
         )
     }
 
@@ -85,7 +116,9 @@ struct Word: Identifiable, Hashable, Codable {
             contexts: contexts,
             sentence: sentence,
             card: card,
-            isDue: card.map { $0.due < now } ?? false
+            isDue: card.map { $0.due < now } ?? false,
+            audioFileName: audioFileName,
+            playAt: playAt
         )
     }
 
@@ -149,7 +182,9 @@ struct Word: Identifiable, Hashable, Codable {
         contexts: [String],
         sentence: SentenceContext?,
         card: Card?,
-        isDue: Bool
+        isDue: Bool,
+        audioFileName: String?,
+        playAt: TimeInterval?
     ) {
         self.id = id
         self.definition = definition
@@ -161,5 +196,7 @@ struct Word: Identifiable, Hashable, Codable {
         self.sentence = sentence
         self.card = card
         self.isDue = isDue
+        self.audioFileName = audioFileName
+        self.playAt = playAt
     }
 }

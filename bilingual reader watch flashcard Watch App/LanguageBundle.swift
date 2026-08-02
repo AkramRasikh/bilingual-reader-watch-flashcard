@@ -7,11 +7,20 @@
 
 import Foundation
 
+struct ContentSnippet: Hashable, Codable {
+    let focusedText: String?
+    let suggestedFocusText: String?
+    let time: TimeInterval
+    let isContracted: Bool
+    let isPreSnippet: Bool
+}
+
 struct ContentTopic: Identifiable, Hashable, Codable {
     let id: String
     let title: String
     /// Sentence ids from `content[].content[].id` — words join via `contexts[0]`.
     let sentenceIds: [String]
+    let snippets: [ContentSnippet]
 }
 
 struct LanguageBundle: Hashable, Codable {
@@ -44,5 +53,9 @@ struct LanguageBundle: Hashable, Codable {
         var copy = self
         copy.words.removeAll { $0.id == wordId }
         return copy
+    }
+
+    func topic(containingSentenceId sentenceId: String) -> ContentTopic? {
+        topics.first { $0.sentenceIds.contains(sentenceId) }
     }
 }
