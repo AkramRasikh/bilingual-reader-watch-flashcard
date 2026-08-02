@@ -10,6 +10,12 @@ import Foundation
 enum LocalWordStore {
     private static let folderName = "word-cache"
 
+    /// True if a cache file exists for this language (even if 0 due words).
+    static func hasCached(language: String) -> Bool {
+        guard let url = fileURL(for: language) else { return false }
+        return FileManager.default.fileExists(atPath: url.path)
+    }
+
     static func load(language: String) -> LanguageBundle? {
         guard let url = fileURL(for: language),
               let data = try? Data(contentsOf: url)
@@ -20,7 +26,7 @@ enum LocalWordStore {
         do {
             var bundle = try JSONDecoder().decode(LanguageBundle.self, from: data)
             bundle.words = bundle.words.map { $0.withFreshDue() }.filter(\.isDue)
-            return bundle.words.isEmpty ? nil : bundle
+            return bundle
         } catch {
             print("[LocalWordStore] decode \(language) failed: \(error)")
             return nil
@@ -59,7 +65,6 @@ enum LocalWordStore {
         ).first else {
             return nil
         }
-        // New format (words + topics). Old `{language}-words.json` is ignored.
         return root
             .appendingPathComponent(folderName, isDirectory: true)
             .appendingPathComponent("\(language)-bundle.json", isDirectory: false)

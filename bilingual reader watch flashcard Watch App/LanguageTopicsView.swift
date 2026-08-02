@@ -21,37 +21,51 @@ struct LanguageTopicsView: View {
     }
 
     var body: some View {
-        List {
-            Button {
-                onSelectReview(nil)
-            } label: {
-                HStack {
-                    Text("All")
-                        .fontWeight(.semibold)
-                    Spacer()
-                    Text("\(bundle.dueCount)")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                }
-            }
+        Group {
+            if bundle.dueCount == 0 && bundle.topics.isEmpty {
+                Text("No data for \(displayName)")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            } else if bundle.dueCount == 0 {
+                Text("No words due")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            } else {
+                List {
+                    Button {
+                        onSelectReview(nil)
+                    } label: {
+                        HStack {
+                            Text("All")
+                                .fontWeight(.semibold)
+                            Spacer()
+                            Text("\(bundle.dueCount)")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                        }
+                    }
 
-            if !topicsWithDue.isEmpty {
-                Section("Content") {
-                    ForEach(topicsWithDue, id: \.topic.id) { row in
-                        Button {
-                            onSelectReview(row.topic.id)
-                        } label: {
-                            HStack(alignment: .top, spacing: 6) {
-                                Text(row.topic.title)
-                                    .font(.caption2)
-                                    .multilineTextAlignment(.leading)
-                                    .lineLimit(2)
-                                Spacer(minLength: 4)
-                                Text("\(row.count)")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                                    .monospacedDigit()
+                    if !topicsWithDue.isEmpty {
+                        Section("Content") {
+                            ForEach(topicsWithDue, id: \.topic.id) { row in
+                                Button {
+                                    onSelectReview(row.topic.id)
+                                } label: {
+                                    HStack(alignment: .top, spacing: 6) {
+                                        Text(row.topic.title)
+                                            .font(.caption2)
+                                            .multilineTextAlignment(.leading)
+                                            .lineLimit(2)
+                                        Spacer(minLength: 4)
+                                        Text("\(row.count)")
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                            .monospacedDigit()
+                                    }
+                                }
                             }
                         }
                     }

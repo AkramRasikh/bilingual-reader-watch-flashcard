@@ -7,12 +7,6 @@
 
 import SwiftUI
 
-private enum LoadSource {
-    case idle
-    case local
-    case network
-}
-
 private enum AppRoute: Hashable {
     case language(String)
     /// `contentId == nil` means All due words for the language.
@@ -21,51 +15,91 @@ private enum AppRoute: Hashable {
 
 struct ContentView: View {
     @State private var bundlesByLanguage: [String: LanguageBundle] = [:]
-    @State private var status = "Loading…"
-    @State private var isLoading = true
-    @State private var loadSource: LoadSource = .idle
+    @State private var cachedLanguages: Set<String> = []
+    @State private var loadingLanguage: String?
+    @State private var loadError: String?
+    @State private var refreshCandidate: String?
     @State private var path = NavigationPath()
 
     private var languages: [String] {
-        bundlesByLanguage.keys.sorted()
+        OnLoadDataClient.knownLanguages
     }
 
     var body: some View {
         NavigationStack(path: $path) {
-            ZStack(alignment: .bottom) {
-                Group {
-                    if isLoading {
-                        Text(status)
-                            .font(.caption2)
-                            .multilineTextAlignment(.center)
-                    } else if languages.isEmpty {
-                        Text(status)
-                            .font(.caption2)
-                            .multilineTextAlignment(.center)
-                    } else {
-                        List(languages, id: \.self) { language in
-                            NavigationLink(value: AppRoute.language(language)) {
-                                HStack {
-                                    Text(displayName(for: language))
-                                    Spacer()
-                                    Text("\(bundlesByLanguage[language]?.dueCount ?? 0)")
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-                                        .monospacedDigit()
-                                }
+            List {
+                ForEach(languages, id: \.self) { language in
+                    Button {
+                        Task { await openLanguage(language) }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(cachedLanguages.contains(language) ? Color.green : Color.clear)
+                                .frame(width: 7, height: 7)
+                                .overlay(
+                                    Circle()
+                                        .stroke(Color.secondary.opacity(0.35), lineWidth: cachedLanguages.contains(language) ? 0 : 1)
+                                )
+
+                            Text(displayName(for: language))
+                                .foregroundStyle(.primary)
+
+                            Spacer()
+
+                            if loadingLanguage == language {
+                                ProgressView()
+                                    .scaleEffect(0.7)
+                            } else if let bundle = bundlesByLanguage[language] {
+                                Text("\(bundle.dueCount)")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                    .monospacedDigit()
                             }
                         }
                     }
-                }
-
-                if loadSource != .idle {
-                    LoadSourceBadge(source: loadSource)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                        .padding(.bottom, 2)
+                    .disabled(loadingLanguage != nil)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        if cachedLanguages.contains(language) {
+                            Button("Refresh") {
+                                refreshCandidate = language
+                            }
+                            .tint(.orange)
+                        }
+                    }
                 }
             }
             .navigationTitle("Languages")
-            .animation(.easeInOut(duration: 0.25), value: loadSource)
+            .overlay {
+                if let loadError {
+                    Text(loadError)
+                        .font(.caption2)
+                        .foregroundStyle(.red)
+                        .multilineTextAlignment(.center)
+                        .padding(8)
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
+                        .padding()
+                }
+            }
+            .confirmationDialog(
+                refreshTitle,
+                isPresented: Binding(
+                    get: { refreshCandidate != nil },
+                    set: { if !$0 { refreshCandidate = nil } }
+                ),
+                titleVisibility: .visible
+            ) {
+                Button("Reload from server", role: .destructive) {
+                    if let language = refreshCandidate {
+                        Task { await refreshLanguage(language) }
+                    }
+                    refreshCandidate = nil
+                }
+                Button("Cancel", role: .cancel) {
+                    refreshCandidate = nil
+                }
+            } message: {
+                Text("This replaces local data for \(displayName(for: refreshCandidate ?? "")). Other devices may have newer or older cards.")
+            }
             .navigationDestination(for: AppRoute.self) { route in
                 switch route {
                 case .language(let language):
@@ -92,9 +126,14 @@ struct ContentView: View {
                 }
             }
         }
-        .task {
-            await loadLanguages()
+        .onAppear {
+            hydrateFromCache()
         }
+    }
+
+    private var refreshTitle: String {
+        let name = displayName(for: refreshCandidate ?? "")
+        return "Refresh \(name)?"
     }
 
     private func popRoute() {
@@ -103,73 +142,61 @@ struct ContentView: View {
         }
     }
 
+    private func hydrateFromCache() {
+        let cached = LocalWordStore.loadAll()
+        bundlesByLanguage = cached
+        cachedLanguages = Set(
+            OnLoadDataClient.knownLanguages.filter { LocalWordStore.hasCached(language: $0) }
+        )
+        print("[LocalWordStore] ready languages = \(cachedLanguages.sorted())")
+    }
+
+    private func openLanguage(_ language: String) async {
+        loadError = nil
+        loadingLanguage = language
+        defer { loadingLanguage = nil }
+
+        do {
+            let bundle = try await OnLoadDataClient.loadLocalOrFetch(language: language)
+            bundlesByLanguage[language] = bundle
+            cachedLanguages.insert(language)
+            path.append(AppRoute.language(language))
+        } catch {
+            print("[openLanguage] \(language) error: \(error)")
+            loadError = "Couldn’t load \(displayName(for: language))"
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            loadError = nil
+        }
+    }
+
+    private func refreshLanguage(_ language: String) async {
+        loadError = nil
+        loadingLanguage = language
+        defer { loadingLanguage = nil }
+
+        do {
+            let bundle = try await OnLoadDataClient.fetchAndCache(language: language)
+            bundlesByLanguage[language] = bundle
+            cachedLanguages.insert(language)
+            print("[refresh] \(language) → \(bundle.dueCount) due")
+        } catch {
+            print("[refresh] \(language) error: \(error)")
+            loadError = "Refresh failed"
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            loadError = nil
+        }
+    }
+
     private func removeWord(_ wordId: String, language: String) {
         guard var bundle = bundlesByLanguage[language] else { return }
         bundle = bundle.removingWord(id: wordId)
-        if bundle.words.isEmpty {
-            bundlesByLanguage[language] = nil
-        } else {
-            bundlesByLanguage[language] = bundle
-        }
-        if let updated = bundlesByLanguage[language] {
-            LocalWordStore.save(language: language, bundle: updated)
-        }
+        bundlesByLanguage[language] = bundle
+        LocalWordStore.save(language: language, bundle: bundle)
     }
 
     private func displayName(for language: String) -> String {
-        language.prefix(1).uppercased() + language.dropFirst()
-    }
-
-    private func loadLanguages() async {
-        let cached = LocalWordStore.loadAll()
-        if !cached.isEmpty {
-            bundlesByLanguage = cached
-            isLoading = false
-            loadSource = .local
-            print("[LocalWordStore] hydrated UI from cache \(cached.keys.sorted())")
-        } else {
-            loadSource = .network
-        }
-
-        do {
-            let data = try await OnLoadDataClient.loadBundlesByLanguage()
-            let keys = data.keys.sorted()
-            print("[getOnLoadData] languages = \(keys)")
-            bundlesByLanguage = data
-            isLoading = false
-            if keys.isEmpty {
-                status = "No languages found"
-            }
-            if loadSource == .local {
-                try? await Task.sleep(nanoseconds: 1_200_000_000)
-            }
-            loadSource = .idle
-        } catch {
-            print("[getOnLoadData] error: \(error)")
-            if cached.isEmpty {
-                status = "Error:\n\(error.localizedDescription)"
-            }
-            isLoading = false
-            try? await Task.sleep(nanoseconds: 900_000_000)
-            loadSource = .idle
-        }
-    }
-}
-
-private struct LoadSourceBadge: View {
-    let source: LoadSource
-
-    var body: some View {
-        HStack(spacing: 4) {
-            Image(systemName: source == .local ? "internaldrive" : "icloud.and.arrow.down")
-                .font(.system(size: 9, weight: .semibold))
-            Text(source == .local ? "Local storage" : "Loading…")
-                .font(.system(size: 10, weight: .medium))
-        }
-        .foregroundStyle(.secondary)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(.ultraThinMaterial, in: Capsule())
+        guard !language.isEmpty else { return "" }
+        return language.prefix(1).uppercased() + language.dropFirst()
     }
 }
 

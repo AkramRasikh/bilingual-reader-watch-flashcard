@@ -12,30 +12,24 @@ enum OnLoadDataClient {
     /// Loaded from `.env` → `GeneratedEnv` at build time.
     private static let endpoint = GeneratedEnv.getOnLoadDataURL
 
-    /// Always fetch every language from the API and persist.
-    /// Returns the refreshed map, falling back to any existing cache when a language fails.
-    static func loadBundlesByLanguage() async throws -> [String: LanguageBundle] {
-        var result = LocalWordStore.loadAll()
-
-        try await withThrowingTaskGroup(of: (String, LanguageBundle?).self) { group in
-            for language in knownLanguages {
-                group.addTask {
-                    let bundle = try await fetchBundle(language: language)
-                    return (language, bundle)
-                }
-            }
-
-            for try await (language, bundle) in group {
-                if let bundle, !bundle.words.isEmpty {
-                    LocalWordStore.save(language: language, bundle: bundle)
-                    result[language] = bundle
-                } else if result[language] == nil {
-                    print("[getOnLoadData] no data for \(language)")
-                }
-            }
+    /// Fetch one language from the API, persist, and return the bundle.
+    /// Successful responses are saved even when there are 0 due words.
+    static func fetchAndCache(language: String) async throws -> LanguageBundle {
+        guard let bundle = try await fetchBundle(language: language) else {
+            throw URLError(.cannotParseResponse)
         }
+        LocalWordStore.save(language: language, bundle: bundle)
+        return bundle
+    }
 
-        return result
+    /// Use local cache when present; otherwise hit the API.
+    static func loadLocalOrFetch(language: String) async throws -> LanguageBundle {
+        if let cached = LocalWordStore.load(language: language) {
+            print("[LocalWordStore] hit \(language) (\(cached.words.count) due)")
+            return cached
+        }
+        print("[getOnLoadData] fetching \(language)")
+        return try await fetchAndCache(language: language)
     }
 
     private static func fetchBundle(language: String) async throws -> LanguageBundle? {
@@ -90,8 +84,6 @@ enum OnLoadDataClient {
 
         let dueWords = mapped.filter(\.isDue)
         print("[getOnLoadData] \(language): \(dueWords.count)/\(mapped.count) due, \(topics.count) topics")
-        guard !dueWords.isEmpty else { return nil }
-
         return LanguageBundle(words: dueWords, topics: topics)
     }
 
