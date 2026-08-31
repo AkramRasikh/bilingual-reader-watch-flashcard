@@ -11,6 +11,7 @@ private enum AppRoute: Hashable {
     case language(String)
     /// `contentId == nil` means All due words for the language.
     case review(language: String, contentId: String?)
+    case improv(language: String)
 }
 
 struct ContentView: View {
@@ -106,10 +107,16 @@ struct ContentView: View {
                     LanguageTopicsView(
                         language: language,
                         bundle: bundlesByLanguage[language] ?? LanguageBundle(words: [], topics: []),
+                        onSelectImprov: {
+                            path.append(AppRoute.improv(language: language))
+                        },
                         onSelectReview: { contentId in
                             path.append(AppRoute.review(language: language, contentId: contentId))
                         }
                     )
+
+                case .improv(let language):
+                    ImprovView(language: language)
 
                 case .review(let language, let contentId):
                     let words = bundlesByLanguage[language]?.words(forContentId: contentId) ?? []

@@ -27,6 +27,8 @@
 		2267AE3F300C1AE900D62DAB /* LanguageBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE3E300C1AE900D62DAB /* LanguageBundle.swift */; };
 		2267AE41300C1AE900D62DAB /* LanguageTopicsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE40300C1AE900D62DAB /* LanguageTopicsView.swift */; };
 		2267AE43300C1AE900D62DAB /* WordAudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE42300C1AE900D62DAB /* WordAudioPlayer.swift */; };
+		2267AE45300C1AE900D62DAB /* ImprovView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE44300C1AE900D62DAB /* ImprovView.swift */; };
+		2267AE47300C1AE900D62DAB /* ImprovRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE46300C1AE900D62DAB /* ImprovRecorder.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -91,6 +93,8 @@
 		2267AE3E300C1AE900D62DAB /* LanguageBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageBundle.swift; sourceTree = "<group>"; };
 		2267AE40300C1AE900D62DAB /* LanguageTopicsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageTopicsView.swift; sourceTree = "<group>"; };
 		2267AE42300C1AE900D62DAB /* WordAudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordAudioPlayer.swift; sourceTree = "<group>"; };
+		2267AE44300C1AE900D62DAB /* ImprovView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImprovView.swift; sourceTree = "<group>"; };
+		2267AE46300C1AE900D62DAB /* ImprovRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImprovRecorder.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -155,6 +159,8 @@
 				2267AE33300C1AE900D62DAB /* VocabSRS.swift */,
 				2267AE23300C1AE900D62DAB /* Word.swift */,
 				2267AE40300C1AE900D62DAB /* LanguageTopicsView.swift */,
+				2267AE44300C1AE900D62DAB /* ImprovView.swift */,
+				2267AE46300C1AE900D62DAB /* ImprovRecorder.swift */,
 				2267AE3C300C1AE900D62DAB /* ReviewSessionView.swift */,
 				2267AE22300C1AE900D62DAB /* Info.plist */,
 				2267ADF8300C1AE900D62DAB /* Assets.xcassets */,
@@ -390,6 +396,8 @@
 				2267AE3D300C1AE900D62DAB /* ReviewSessionView.swift in Sources */,
 				2267AE3F300C1AE900D62DAB /* LanguageBundle.swift in Sources */,
 				2267AE41300C1AE900D62DAB /* LanguageTopicsView.swift in Sources */,
+				2267AE45300C1AE900D62DAB /* ImprovView.swift in Sources */,
+				2267AE47300C1AE900D62DAB /* ImprovRecorder.swift in Sources */,
 				2267AE43300C1AE900D62DAB /* WordAudioPlayer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -559,12 +567,14 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 74NNGKW9ES;
 				DEVELOPMENT_ASSET_PATHS = "\"bilingual reader watch flashcard Watch App/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "bilingual reader watch flashcard Watch App/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "bilingual reader watch flashcard";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Improv uses the microphone to record what you want to say.";
 				INFOPLIST_KEY_WKWatchOnly = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -589,12 +599,14 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 74NNGKW9ES;
 				DEVELOPMENT_ASSET_PATHS = "\"bilingual reader watch flashcard Watch App/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "bilingual reader watch flashcard Watch App/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "bilingual reader watch flashcard";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Improv uses the microphone to record what you want to say.";
 				INFOPLIST_KEY_WKWatchOnly = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
