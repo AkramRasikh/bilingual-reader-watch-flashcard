@@ -39,7 +39,7 @@ enum OnLoadDataClient {
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.httpBody = try JSONSerialization.data(withJSONObject: [
             "language": language,
-            "refs": ["words", "content"],
+            "refs": ["words", "content", "sentences"],
         ])
 
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -52,18 +52,26 @@ enum OnLoadDataClient {
             return nil
         }
 
-        // Response shape: [{ "words": [...] }, { "content": [...] }] (order follows refs)
+        // Response shape: [{ "words": [...] }, { "content": [...] }, { "sentences": [...] }]
         guard let root = try JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
             return nil
         }
 
         let rawWords = root.first(where: { $0["words"] != nil })?["words"] as? [[String: Any]]
         let rawContent = root.first(where: { $0["content"] != nil })?["content"] as? [[String: Any]]
+        let rawSentences = dictionaries(
+            from: root.first(where: { $0["sentences"] != nil })?["sentences"]
+        )
 
         guard let rawWords else { return nil }
 
         let topics = buildTopics(from: rawContent ?? [])
-        let sentenceById = buildSentenceMap(from: rawContent ?? [])
+        var sentenceById = buildSentenceMap(from: rawContent ?? [])
+        mergeStandaloneSentences(rawSentences, into: &sentenceById)
+        let helperSentenceIds = collectAdhocSentenceIds(
+            from: rawSentences,
+            excluding: Set(topics.flatMap(\.sentenceIds))
+        )
         let now = Date()
 
         let mapped = rawWords.compactMap { dict -> Word? in
@@ -77,14 +85,21 @@ enum OnLoadDataClient {
             {
                 let playAt = resolvePlayAt(word: word, topic: topic, sentence: sentence)
                 word = word.withAudio(fileName: topic.title, playAt: playAt)
+            } else if let sentenceId {
+                // Same as web WordCardSecondaryAudioWidget: `{language}-audio/{sentenceId}.mp3` from 0:00.
+                word = word.withAudio(fileName: sentenceId, playAt: 0)
             }
 
             return word
         }
 
         let dueWords = mapped.filter(\.isDue)
-        print("[getOnLoadData] \(language): \(dueWords.count)/\(mapped.count) due, \(topics.count) topics")
-        return LanguageBundle(words: dueWords, topics: topics)
+        print("[getOnLoadData] \(language): \(dueWords.count)/\(mapped.count) due, \(topics.count) topics, \(helperSentenceIds.count) adhoc sentences")
+        return LanguageBundle(
+            words: dueWords,
+            topics: topics,
+            adhocSentenceIds: helperSentenceIds
+        )
     }
 
     /// Prefer snippet cue (LearningScreenWordCard), else sentence time.
@@ -174,6 +189,52 @@ enum OnLoadDataClient {
         }
 
         return map
+    }
+
+    /// Firebase `sentences` may be an array or a keyed object (`Object.values` on the server).
+    private static func dictionaries(from value: Any?) -> [[String: Any]] {
+        if let array = value as? [[String: Any]] {
+            return array
+        }
+        if let array = value as? [Any] {
+            return array.compactMap { $0 as? [String: Any] }
+        }
+        if let object = value as? [String: Any] {
+            return object.values.compactMap { $0 as? [String: Any] }
+        }
+        return []
+    }
+
+    /// Fill gaps only — content sentences keep `time` / article text when ids collide.
+    private static func mergeStandaloneSentences(
+        _ sentences: [[String: Any]],
+        into map: inout [String: SentenceContext]
+    ) {
+        for sentence in sentences {
+            guard let id = sentence["id"] as? String, map[id] == nil else { continue }
+            let targetLang = sentence["targetLang"] as? String ?? ""
+            let baseLang = sentence["baseLang"] as? String ?? ""
+            guard !targetLang.isEmpty || !baseLang.isEmpty else { continue }
+            map[id] = SentenceContext(
+                targetLang: targetLang,
+                baseLang: baseLang,
+                time: doubleValue(sentence["time"])
+            )
+        }
+    }
+
+    private static func collectAdhocSentenceIds(
+        from sentences: [[String: Any]],
+        excluding contentSentenceIds: Set<String>
+    ) -> [String] {
+        sentences.compactMap { sentence -> String? in
+            guard (sentence["topic"] as? String) == "sentence-helper",
+                  let id = sentence["id"] as? String,
+                  !id.isEmpty,
+                  !contentSentenceIds.contains(id)
+            else { return nil }
+            return id
+        }
     }
 
     private static func doubleValue(_ value: Any?) -> Double? {

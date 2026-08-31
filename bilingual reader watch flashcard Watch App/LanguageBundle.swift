@@ -24,20 +24,53 @@ struct ContentTopic: Identifiable, Hashable, Codable {
 }
 
 struct LanguageBundle: Hashable, Codable {
+    /// Sentinel `contentId` for the derived Adhoc words queue.
+    static let adhocContentId = "adhoc"
+
     var words: [Word]
     var topics: [ContentTopic]
+    /// Sentence ids from `{language}/sentences` with `topic == sentence-helper`.
+    var adhocSentenceIds: [String]
 
     var dueCount: Int { words.count }
 
-    /// All due words, or only those whose `contexts[0]` belongs to the topic.
+    var adhocDueCount: Int { words(forContentId: Self.adhocContentId).count }
+
+    init(words: [Word], topics: [ContentTopic], adhocSentenceIds: [String] = []) {
+        self.words = words
+        self.topics = topics
+        self.adhocSentenceIds = adhocSentenceIds
+    }
+
+    /// All due words, Adhoc (`adhocContentId`), or a content topic.
     func words(forContentId contentId: String?) -> [Word] {
-        guard let contentId else { return words }
-        guard let topic = topics.first(where: { $0.id == contentId }) else { return [] }
-        let sentenceIds = Set(topic.sentenceIds)
-        return words.filter { word in
-            guard let context = word.contexts.first else { return false }
-            return sentenceIds.contains(context)
+        let filtered: [Word]
+        if contentId == Self.adhocContentId {
+            let sentenceIds = Set(adhocSentenceIds)
+            filtered = words.filter { word in
+                guard let context = word.contexts.first else { return false }
+                return sentenceIds.contains(context)
+            }
+        } else if let contentId {
+            guard let topic = topics.first(where: { $0.id == contentId }) else { return [] }
+            let sentenceIds = Set(topic.sentenceIds)
+            filtered = words.filter { word in
+                guard let context = word.contexts.first else { return false }
+                return sentenceIds.contains(context)
+            }
+        } else {
+            filtered = words
         }
+        return filtered.map { withStandaloneAudioIfNeeded($0) }
+    }
+
+    /// Cached bundles may predate audio attachment; clip is `{sentenceId}.mp3`.
+    func withStandaloneAudioIfNeeded(_ word: Word) -> Word {
+        if word.canPlayAudio { return word }
+        guard let sentenceId = word.contexts.first,
+              adhocSentenceIds.contains(sentenceId)
+        else { return word }
+        return word.withAudio(fileName: sentenceId, playAt: 0)
     }
 
     /// Topics that still have due cards, sorted by due count (desc).
@@ -57,5 +90,25 @@ struct LanguageBundle: Hashable, Codable {
 
     func topic(containingSentenceId sentenceId: String) -> ContentTopic? {
         topics.first { $0.sentenceIds.contains(sentenceId) }
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case words
+        case topics
+        case adhocSentenceIds
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        words = try container.decode([Word].self, forKey: .words)
+        topics = try container.decode([ContentTopic].self, forKey: .topics)
+        adhocSentenceIds = try container.decodeIfPresent([String].self, forKey: .adhocSentenceIds) ?? []
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(words, forKey: .words)
+        try container.encode(topics, forKey: .topics)
+        try container.encode(adhocSentenceIds, forKey: .adhocSentenceIds)
     }
 }

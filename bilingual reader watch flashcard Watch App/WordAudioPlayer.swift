@@ -109,7 +109,14 @@ final class WordAudioPlayer: ObservableObject {
     }
 
     private func seekAndPlay(cue: TimeInterval, key: String) {
-        let time = CMTime(seconds: max(0, cue), preferredTimescale: 600)
+        if cue <= 0 {
+            activeKey = key
+            player.play()
+            isPlaying = true
+            return
+        }
+
+        let time = CMTime(seconds: cue, preferredTimescale: 600)
         player.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] finished in
             Task { @MainActor in
                 guard let self, finished else { return }

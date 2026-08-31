@@ -25,7 +25,8 @@ enum LocalWordStore {
 
         do {
             var bundle = try JSONDecoder().decode(LanguageBundle.self, from: data)
-            bundle.words = bundle.words.map { $0.withFreshDue() }.filter(\.isDue)
+            let due = bundle.words.map { $0.withFreshDue() }.filter(\.isDue)
+            bundle.words = due.map { bundle.withStandaloneAudioIfNeeded($0) }
             return bundle
         } catch {
             print("[LocalWordStore] decode \(language) failed: \(error)")
@@ -42,7 +43,7 @@ enum LocalWordStore {
             )
             let data = try JSONEncoder().encode(bundle)
             try data.write(to: url, options: [.atomic])
-            print("[LocalWordStore] saved \(bundle.words.count) words / \(bundle.topics.count) topics for \(language)")
+            print("[LocalWordStore] saved \(bundle.words.count) words / \(bundle.topics.count) topics / \(bundle.adhocSentenceIds.count) adhoc for \(language)")
         } catch {
             print("[LocalWordStore] save \(language) failed: \(error)")
         }

@@ -28,7 +28,7 @@ struct Word: Identifiable, Hashable, Codable {
     let card: Card?
     /// Mirrors web `initWords` / `isDueCheck`: due exists and is strictly before now.
     let isDue: Bool
-    /// Topic title used as Cloudflare audio basename (`{title}.mp3`).
+    /// Cloudflare audio basename: article `title` (seek into topic MP3) or standalone sentence id (play from start).
     let audioFileName: String?
     /// Seek time into the topic MP3 (snippet cue preferred, else sentence time).
     let playAt: TimeInterval?
@@ -36,9 +36,12 @@ struct Word: Identifiable, Hashable, Codable {
     var dueDate: Date? { card?.due }
 
     var canPlayAudio: Bool {
-        guard let audioFileName, !audioFileName.isEmpty, playAt != nil else { return false }
+        guard let audioFileName, !audioFileName.isEmpty else { return false }
         return true
     }
+
+    /// Seek into a topic MP3, or `0` for a standalone sentence clip.
+    var audioCue: TimeInterval { playAt ?? 0 }
 
     init?(dictionary: [String: Any], sentence: SentenceContext? = nil, now: Date = Date()) {
         let id = dictionary["id"] as? String ?? UUID().uuidString

@@ -29,10 +29,9 @@ struct FlashcardView: View {
     private var isThisWordPlaying: Bool {
         guard word.canPlayAudio,
               let fileName = word.audioFileName,
-              let cue = word.playAt,
               let url = WordAudioPlayer.audioURL(fileName: fileName, language: language)
         else { return false }
-        let key = "\(url.absoluteString)#\(cue)"
+        let key = "\(url.absoluteString)#\(word.audioCue)"
         return audioPlayer.isPlaying && audioPlayer.activeKey == key
     }
 
@@ -65,10 +64,8 @@ struct FlashcardView: View {
 
                 if word.canPlayAudio {
                     Button {
-                        guard let fileName = word.audioFileName,
-                              let cue = word.playAt
-                        else { return }
-                        audioPlayer.toggle(fileName: fileName, language: language, cue: cue)
+                        guard let fileName = word.audioFileName else { return }
+                        audioPlayer.toggle(fileName: fileName, language: language, cue: word.audioCue)
                     } label: {
                         Image(systemName: isThisWordPlaying ? "pause.fill" : "play.fill")
                             .font(.system(size: 12, weight: .bold))

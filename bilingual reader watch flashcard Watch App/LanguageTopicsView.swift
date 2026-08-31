@@ -2,7 +2,7 @@
 //  LanguageTopicsView.swift
 //  bilingual reader watch flashcard Watch App
 //
-//  After picking a language: Improv, then All + content rows with due counts.
+//  After picking a language: Improv, Adhoc words, then All + content rows.
 //
 
 import SwiftUI
@@ -26,6 +26,24 @@ struct LanguageTopicsView: View {
             Section("Improv") {
                 Button(action: onSelectImprov) {
                     Text("Dictation")
+                }
+            }
+
+            if bundle.adhocDueCount > 0 {
+                Section("Adhoc words") {
+                    Button {
+                        onSelectReview(LanguageBundle.adhocContentId)
+                    } label: {
+                        HStack {
+                            Text("Review")
+                                .fontWeight(.semibold)
+                            Spacer()
+                            Text("\(bundle.adhocDueCount)")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                        }
+                    }
                 }
             }
 
