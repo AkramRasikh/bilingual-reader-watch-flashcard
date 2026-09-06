@@ -77,6 +77,9 @@ struct TopicDetailView: View {
                         await download.start(language: language, fileName: fileName)
                     }
                 }
+                .font(.caption2)
+                .buttonStyle(.bordered)
+                .controlSize(.mini)
             }
 
             if let errorMessage = download.errorMessage {
