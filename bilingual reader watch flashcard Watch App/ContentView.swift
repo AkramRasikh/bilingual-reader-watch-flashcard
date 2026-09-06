@@ -12,6 +12,7 @@ import SwiftUI
 private enum AppRoute: Hashable {
     case language(String)
     case topic(language: String, contentId: String)
+    case shadowing(language: String, contentId: String)
     /// `contentId == nil` means All due words for the language.
     case review(language: String, contentId: String?)
     case improv(language: String)
@@ -132,8 +133,20 @@ struct ContentView: View {
                             dueCount: topicDueCount(language: language, contentId: contentId),
                             onSelectReview: {
                                 path.append(AppRoute.review(language: language, contentId: contentId))
+                            },
+                            onSelectShadowing: {
+                                path.append(AppRoute.shadowing(language: language, contentId: contentId))
                             }
                         )
+                    } else {
+                        Text("Content unavailable")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+
+                case .shadowing(let language, let contentId):
+                    if let topic = bundlesByLanguage[language]?.topics.first(where: { $0.id == contentId }) {
+                        ShadowingView(language: language, topic: topic)
                     } else {
                         Text("Content unavailable")
                             .font(.caption2)

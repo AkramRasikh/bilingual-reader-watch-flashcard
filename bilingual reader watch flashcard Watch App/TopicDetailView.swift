@@ -37,6 +37,7 @@ struct TopicDetailView: View {
     let topic: ContentTopic
     let dueCount: Int
     var onSelectReview: () -> Void = {}
+    var onSelectShadowing: () -> Void = {}
 
     @ObservedObject private var library = AudioLibrary.shared
     @StateObject private var download = TopicAudioSession()
@@ -89,6 +90,10 @@ struct TopicDetailView: View {
                         .accessibilityLabel("Download audio")
                         .accessibilityHint("Double tap to download")
                 }
+            }
+
+            Button("Shadowing") {
+                onSelectShadowing()
             }
 
             Text("\(dueCount) due")

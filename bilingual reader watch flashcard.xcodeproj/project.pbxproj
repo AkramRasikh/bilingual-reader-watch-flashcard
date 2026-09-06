@@ -31,6 +31,7 @@
 		2267AE47300C1AE900D62DAB /* ImprovRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE46300C1AE900D62DAB /* ImprovRecorder.swift */; };
 		2267AE49300C1AE900D62DAB /* AudioFileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE48300C1AE900D62DAB /* AudioFileStore.swift */; };
 		2267AE4B300C1AE900D62DAB /* TopicDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE4A300C1AE900D62DAB /* TopicDetailView.swift */; };
+		2267AE4D300C1AE900D62DAB /* ShadowingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE4C300C1AE900D62DAB /* ShadowingView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -99,6 +100,7 @@
 		2267AE46300C1AE900D62DAB /* ImprovRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImprovRecorder.swift; sourceTree = "<group>"; };
 		2267AE48300C1AE900D62DAB /* AudioFileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioFileStore.swift; sourceTree = "<group>"; };
 		2267AE4A300C1AE900D62DAB /* TopicDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicDetailView.swift; sourceTree = "<group>"; };
+		2267AE4C300C1AE900D62DAB /* ShadowingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShadowingView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -159,6 +161,7 @@
 				2267AE42300C1AE900D62DAB /* WordAudioPlayer.swift */,
 				2267AE48300C1AE900D62DAB /* AudioFileStore.swift */,
 				2267AE4A300C1AE900D62DAB /* TopicDetailView.swift */,
+				2267AE4C300C1AE900D62DAB /* ShadowingView.swift */,
 				2267AE35300C1AE900D62DAB /* GeneratedEnv.swift */,
 				2267AE38300C1AE900D62DAB /* LocalWordStore.swift */,
 				2267AE3E300C1AE900D62DAB /* LanguageBundle.swift */,
@@ -407,6 +410,7 @@
 				2267AE43300C1AE900D62DAB /* WordAudioPlayer.swift in Sources */,
 				2267AE49300C1AE900D62DAB /* AudioFileStore.swift in Sources */,
 				2267AE4B300C1AE900D62DAB /* TopicDetailView.swift in Sources */,
+				2267AE4D300C1AE900D62DAB /* ShadowingView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
