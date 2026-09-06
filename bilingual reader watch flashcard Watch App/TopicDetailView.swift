@@ -61,35 +61,34 @@ struct TopicDetailView: View {
                 .fontWeight(.semibold)
                 .foregroundStyle(isSaved ? Color.green : Color.secondary)
 
-            if download.isDownloading {
-                if download.fraction > 0 {
-                    ProgressView(value: download.fraction)
-                    Text("\(Int(download.fraction * 100))%")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                } else {
-                    ProgressView()
-                }
-            } else if !isSaved {
-                Button("Download") {
-                    Task {
-                        await download.start(language: language, fileName: fileName)
-                    }
-                }
-                .font(.caption2)
-                .buttonStyle(.bordered)
-                .controlSize(.mini)
-            }
-
             if let errorMessage = download.errorMessage {
                 Text(errorMessage)
                     .font(.caption2)
                     .foregroundStyle(.red)
             }
 
-            Button("Review") {
-                onSelectReview()
+            HStack(alignment: .center, spacing: 6) {
+                Button("Review") {
+                    onSelectReview()
+                }
+                .frame(maxWidth: .infinity)
+
+                if download.isDownloading {
+                    downloadProgress
+                } else if !isSaved {
+                    Image(systemName: "arrow.down.circle")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 28, height: 36)
+                        .contentShape(Rectangle())
+                        .onTapGesture(count: 2) {
+                            Task {
+                                await download.start(language: language, fileName: fileName)
+                            }
+                        }
+                        .accessibilityLabel("Download audio")
+                        .accessibilityHint("Double tap to download")
+                }
             }
 
             Text("\(dueCount) due")
@@ -102,5 +101,16 @@ struct TopicDetailView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 4)
         .navigationTitle(topic.title)
+    }
+
+    @ViewBuilder
+    private var downloadProgress: some View {
+        if download.fraction > 0 {
+            ProgressView(value: download.fraction)
+                .frame(width: 28, height: 36)
+        } else {
+            ProgressView()
+                .frame(width: 28, height: 36)
+        }
     }
 }
