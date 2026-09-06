@@ -12,7 +12,7 @@ struct FlashcardView: View {
     var remainingCount: Int = 0
     var adhocSentenceIds: [String] = []
     var onBack: () -> Void = {}
-    var onReviewed: (String) -> Void = { _ in }
+    var onReviewed: (String, Card) -> Void = { _, _ in }
     var onDeleted: (String) -> Void = { _ in }
 
     @ObservedObject private var audioPlayer = WordAudioPlayer.shared
@@ -286,6 +286,7 @@ struct FlashcardView: View {
         defer { isSubmitting = false }
 
         do {
+            let persisted = VocabSRS.cardForPersist(next)
             try await WordReviewClient.updateReviewData(
                 wordId: word.id,
                 language: language,
@@ -293,7 +294,7 @@ struct FlashcardView: View {
             )
             print("[vocab SRS] saved \(rating.stringValue) for \(word.id)")
             audioPlayer.stop()
-            onReviewed(word.id)
+            onReviewed(word.id, persisted)
         } catch {
             print("[vocab SRS] update failed: \(error)")
             errorMessage = "Save failed"

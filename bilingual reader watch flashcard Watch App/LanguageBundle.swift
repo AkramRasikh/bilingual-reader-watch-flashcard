@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import FSRS
 
 struct ContentSnippet: Hashable, Codable {
     let focusedText: String?
@@ -32,7 +33,9 @@ struct LanguageBundle: Hashable, Codable {
     /// Sentence ids from `{language}/sentences` with `topic == sentence-helper`.
     var adhocSentenceIds: [String]
 
-    var dueCount: Int { words.count }
+    var dueCount: Int {
+        words.reduce(0) { $0 + ($1.withFreshDue().isDue ? 1 : 0) }
+    }
 
     var adhocDueCount: Int { words(forContentId: Self.adhocContentId).count }
 
@@ -61,7 +64,9 @@ struct LanguageBundle: Hashable, Codable {
         } else {
             filtered = words
         }
-        return filtered.map { withStandaloneAudioIfNeeded($0) }
+        return filtered
+            .map { withStandaloneAudioIfNeeded($0).withFreshDue() }
+            .filter(\.isDue)
     }
 
     /// Cached bundles may predate audio attachment; clip is `{sentenceId}.mp3`.
@@ -89,8 +94,16 @@ struct LanguageBundle: Hashable, Codable {
             copy.adhocSentenceIds.append(sentenceId)
         }
         let hydrated = copy.withStandaloneAudioIfNeeded(word)
-        if hydrated.isDue, !copy.words.contains(where: { $0.id == hydrated.id }) {
+        if !copy.words.contains(where: { $0.id == hydrated.id }) {
             copy.words.insert(hydrated, at: 0)
+        }
+        return copy
+    }
+
+    func updatingCard(wordId: String, card: Card) -> LanguageBundle {
+        var copy = self
+        copy.words = copy.words.map { word in
+            word.id == wordId ? word.withCard(card) : word
         }
         return copy
     }

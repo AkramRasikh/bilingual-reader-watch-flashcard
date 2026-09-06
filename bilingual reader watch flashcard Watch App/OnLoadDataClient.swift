@@ -25,7 +25,7 @@ enum OnLoadDataClient {
     /// Use local cache when present; otherwise hit the API.
     static func loadLocalOrFetch(language: String) async throws -> LanguageBundle {
         if let cached = LocalWordStore.load(language: language) {
-            print("[LocalWordStore] hit \(language) (\(cached.words.count) due)")
+            print("[LocalWordStore] hit \(language) (\(cached.dueCount)/\(cached.words.count) due)")
             return cached
         }
         print("[getOnLoadData] fetching \(language)")
@@ -93,10 +93,10 @@ enum OnLoadDataClient {
             return word
         }
 
-        let dueWords = mapped.filter(\.isDue)
-        print("[getOnLoadData] \(language): \(dueWords.count)/\(mapped.count) due, \(topics.count) topics, \(helperSentenceIds.count) adhoc sentences")
+        let dueCount = mapped.filter(\.isDue).count
+        print("[getOnLoadData] \(language): \(dueCount)/\(mapped.count) due, \(topics.count) topics, \(helperSentenceIds.count) adhoc sentences")
         return LanguageBundle(
-            words: dueWords,
+            words: mapped,
             topics: topics,
             adhocSentenceIds: helperSentenceIds
         )

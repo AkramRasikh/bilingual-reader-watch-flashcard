@@ -5,6 +5,8 @@
 //  Created by Akram Rasikh on 18/07/2026.
 //
 
+import Combine
+import FSRS
 import SwiftUI
 
 private enum AppRoute: Hashable {
@@ -16,12 +18,14 @@ private enum AppRoute: Hashable {
 }
 
 struct ContentView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @State private var bundlesByLanguage: [String: LanguageBundle] = [:]
     @State private var cachedLanguages: Set<String> = []
     @State private var loadingLanguage: String?
     @State private var loadError: String?
     @State private var refreshCandidate: String?
     @State private var path = NavigationPath()
+    @State private var dueClock = Date()
 
     private var languages: [String] {
         OnLoadDataClient.knownLanguages
@@ -52,7 +56,7 @@ struct ContentView: View {
                                 ProgressView()
                                     .scaleEffect(0.7)
                             } else if let bundle = bundlesByLanguage[language] {
-                                Text("\(bundle.dueCount)")
+                                Text("\(dueCount(bundle))")
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
                                     .monospacedDigit()
@@ -108,6 +112,7 @@ struct ContentView: View {
                     LanguageTopicsView(
                         language: language,
                         bundle: bundlesByLanguage[language] ?? LanguageBundle(words: [], topics: []),
+                        dueClock: dueClock,
                         onSelectImprov: {
                             path.append(AppRoute.improv(language: language))
                         },
@@ -124,7 +129,7 @@ struct ContentView: View {
                         TopicDetailView(
                             language: language,
                             topic: topic,
-                            dueCount: bundlesByLanguage[language]?.words(forContentId: contentId).count ?? 0,
+                            dueCount: topicDueCount(language: language, contentId: contentId),
                             onSelectReview: {
                                 path.append(AppRoute.review(language: language, contentId: contentId))
                             }
@@ -146,8 +151,14 @@ struct ContentView: View {
                         language: language,
                         initialWords: words,
                         adhocSentenceIds: bundlesByLanguage[language]?.adhocSentenceIds ?? [],
+                        currentDueWords: {
+                            bundlesByLanguage[language]?.words(forContentId: contentId) ?? []
+                        },
                         onBack: { popRoute() },
-                        onWordRemoved: { wordId in
+                        onReviewed: { wordId, card in
+                            updateReviewedWord(wordId, card: card, language: language)
+                        },
+                        onDeleted: { wordId in
                             removeWord(wordId, language: language)
                         }
                     )
@@ -158,6 +169,15 @@ struct ContentView: View {
         }
         .onAppear {
             hydrateFromCache()
+            dueClock = Date()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                dueClock = Date()
+            }
+        }
+        .onReceive(Timer.publish(every: 15, on: .main, in: .common).autoconnect()) { date in
+            dueClock = date
         }
     }
 
@@ -215,6 +235,23 @@ struct ContentView: View {
             try? await Task.sleep(nanoseconds: 2_000_000_000)
             loadError = nil
         }
+    }
+
+    private func dueCount(_ bundle: LanguageBundle) -> Int {
+        _ = dueClock
+        return bundle.dueCount
+    }
+
+    private func topicDueCount(language: String, contentId: String) -> Int {
+        _ = dueClock
+        return bundlesByLanguage[language]?.words(forContentId: contentId).count ?? 0
+    }
+
+    private func updateReviewedWord(_ wordId: String, card: Card, language: String) {
+        guard var bundle = bundlesByLanguage[language] else { return }
+        bundle = bundle.updatingCard(wordId: wordId, card: card)
+        bundlesByLanguage[language] = bundle
+        LocalWordStore.save(language: language, bundle: bundle)
     }
 
     private func insertAdhocWord(_ word: Word, language: String) {

@@ -10,6 +10,7 @@ import SwiftUI
 struct LanguageTopicsView: View {
     let language: String
     let bundle: LanguageBundle
+    var dueClock: Date = Date()
     var onSelectImprov: () -> Void = {}
     var onSelectReview: (_ contentId: String?) -> Void = { _ in }
     var onSelectTopic: (_ contentId: String) -> Void = { _ in }
@@ -21,10 +22,12 @@ struct LanguageTopicsView: View {
     }
 
     private var topicsByDueCount: [(topic: ContentTopic, count: Int)] {
-        bundle.topicsByDueCount
+        _ = dueClock
+        return bundle.topicsByDueCount
     }
 
     var body: some View {
+        let _ = dueClock
         List {
             Section("Improv") {
                 Button(action: onSelectImprov) {

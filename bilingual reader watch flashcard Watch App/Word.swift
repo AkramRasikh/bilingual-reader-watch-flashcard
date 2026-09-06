@@ -107,6 +107,23 @@ struct Word: Identifiable, Hashable, Codable {
         )
     }
 
+    func withCard(_ card: Card, now: Date = Date()) -> Word {
+        Word(
+            id: id,
+            definition: definition,
+            baseForm: baseForm,
+            surfaceForm: surfaceForm,
+            transliteration: transliteration,
+            mnemonic: mnemonic,
+            contexts: contexts,
+            sentence: sentence,
+            card: card,
+            isDue: card.due < now,
+            audioFileName: audioFileName,
+            playAt: playAt
+        )
+    }
+
     /// Recompute `isDue` from `card.due` (for cache loads).
     func withFreshDue(now: Date = Date()) -> Word {
         Word(

@@ -25,8 +25,10 @@ enum LocalWordStore {
 
         do {
             var bundle = try JSONDecoder().decode(LanguageBundle.self, from: data)
-            let due = bundle.words.map { $0.withFreshDue() }.filter(\.isDue)
-            bundle.words = due.map { bundle.withStandaloneAudioIfNeeded($0) }
+            bundle.words = bundle.words.map { word in
+                bundle.withStandaloneAudioIfNeeded(word.withFreshDue())
+            }
+            print("[LocalWordStore] loaded \(bundle.dueCount)/\(bundle.words.count) due for \(language)")
             return bundle
         } catch {
             print("[LocalWordStore] decode \(language) failed: \(error)")
