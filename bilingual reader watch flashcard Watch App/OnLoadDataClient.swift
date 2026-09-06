@@ -93,12 +93,15 @@ enum OnLoadDataClient {
             return word
         }
 
+        let reviewableSentences = buildReviewableSentences(from: rawContent ?? [], now: now)
         let dueCount = mapped.filter(\.isDue).count
-        print("[getOnLoadData] \(language): \(dueCount)/\(mapped.count) due, \(topics.count) topics, \(helperSentenceIds.count) adhoc sentences")
+        let sentenceDue = reviewableSentences.filter(\.isDue).count
+        print("[getOnLoadData] \(language): \(dueCount)/\(mapped.count) words due, \(sentenceDue)/\(reviewableSentences.count) sentences due, \(topics.count) topics, \(helperSentenceIds.count) adhoc sentences")
         return LanguageBundle(
             words: mapped,
             topics: topics,
-            adhocSentenceIds: helperSentenceIds
+            adhocSentenceIds: helperSentenceIds,
+            sentences: reviewableSentences
         )
     }
 
@@ -165,6 +168,39 @@ enum OnLoadDataClient {
                 snippets: snippets
             )
         }
+    }
+
+    /// Transcript rows that already have FSRS `reviewData`.
+    private static func buildReviewableSentences(
+        from contentItems: [[String: Any]],
+        now: Date
+    ) -> [ReviewableSentence] {
+        contentItems.flatMap { item -> [ReviewableSentence] in
+            let contentId = item["id"] as? String ?? ""
+            let title = item["title"] as? String ?? ""
+            guard !contentId.isEmpty else { return [] }
+            let audioFileName = title.isEmpty ? nil : title
+            let sentences = item["content"] as? [[String: Any]] ?? []
+            return sentences.enumerated().compactMap { index, sentence in
+                let previous = index > 0 ? Self.neighborText(from: sentences[index - 1]) : ("", "")
+                let next = index + 1 < sentences.count ? Self.neighborText(from: sentences[index + 1]) : ("", "")
+                return ReviewableSentence(
+                    dictionary: sentence,
+                    contentId: contentId,
+                    audioFileName: audioFileName,
+                    previous: previous,
+                    next: next,
+                    now: now
+                )
+            }
+        }
+    }
+
+    private static func neighborText(from sentence: [String: Any]) -> (targetLang: String, baseLang: String) {
+        (
+            sentence["targetLang"] as? String ?? "",
+            sentence["baseLang"] as? String ?? ""
+        )
     }
 
     /// Mirrors `initWords` sentenceId map, keeping targetLang/baseLang + time.

@@ -32,6 +32,9 @@
 		2267AE49300C1AE900D62DAB /* AudioFileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE48300C1AE900D62DAB /* AudioFileStore.swift */; };
 		2267AE4B300C1AE900D62DAB /* TopicDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE4A300C1AE900D62DAB /* TopicDetailView.swift */; };
 		2267AE4D300C1AE900D62DAB /* ShadowingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE4C300C1AE900D62DAB /* ShadowingView.swift */; };
+		2267AE4F300C1AE900D62DAB /* ReviewableSentence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE4E300C1AE900D62DAB /* ReviewableSentence.swift */; };
+		2267AE51300C1AE900D62DAB /* SentenceFlashcardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE50300C1AE900D62DAB /* SentenceFlashcardView.swift */; };
+		2267AE53300C1AE900D62DAB /* SentenceReviewSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE52300C1AE900D62DAB /* SentenceReviewSessionView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -101,6 +104,9 @@
 		2267AE48300C1AE900D62DAB /* AudioFileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioFileStore.swift; sourceTree = "<group>"; };
 		2267AE4A300C1AE900D62DAB /* TopicDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicDetailView.swift; sourceTree = "<group>"; };
 		2267AE4C300C1AE900D62DAB /* ShadowingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShadowingView.swift; sourceTree = "<group>"; };
+		2267AE4E300C1AE900D62DAB /* ReviewableSentence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewableSentence.swift; sourceTree = "<group>"; };
+		2267AE50300C1AE900D62DAB /* SentenceFlashcardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SentenceFlashcardView.swift; sourceTree = "<group>"; };
+		2267AE52300C1AE900D62DAB /* SentenceReviewSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SentenceReviewSessionView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -162,6 +168,9 @@
 				2267AE48300C1AE900D62DAB /* AudioFileStore.swift */,
 				2267AE4A300C1AE900D62DAB /* TopicDetailView.swift */,
 				2267AE4C300C1AE900D62DAB /* ShadowingView.swift */,
+				2267AE4E300C1AE900D62DAB /* ReviewableSentence.swift */,
+				2267AE50300C1AE900D62DAB /* SentenceFlashcardView.swift */,
+				2267AE52300C1AE900D62DAB /* SentenceReviewSessionView.swift */,
 				2267AE35300C1AE900D62DAB /* GeneratedEnv.swift */,
 				2267AE38300C1AE900D62DAB /* LocalWordStore.swift */,
 				2267AE3E300C1AE900D62DAB /* LanguageBundle.swift */,
@@ -411,6 +420,9 @@
 				2267AE49300C1AE900D62DAB /* AudioFileStore.swift in Sources */,
 				2267AE4B300C1AE900D62DAB /* TopicDetailView.swift in Sources */,
 				2267AE4D300C1AE900D62DAB /* ShadowingView.swift in Sources */,
+				2267AE4F300C1AE900D62DAB /* ReviewableSentence.swift in Sources */,
+				2267AE51300C1AE900D62DAB /* SentenceFlashcardView.swift in Sources */,
+				2267AE53300C1AE900D62DAB /* SentenceReviewSessionView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

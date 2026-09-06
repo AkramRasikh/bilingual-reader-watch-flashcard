@@ -53,7 +53,7 @@ struct Word: Identifiable, Hashable, Codable {
             ?? ""
         let mnemonic = dictionary["mnemonic"] as? String
         let contexts = dictionary["contexts"] as? [String] ?? []
-        let card = Self.parseCard(from: dictionary["reviewData"] as? [String: Any])
+        let card = ReviewDataParsing.card(from: dictionary["reviewData"] as? [String: Any])
 
         guard !definition.isEmpty || !baseForm.isEmpty || !surfaceForm.isEmpty else {
             return nil
@@ -142,7 +142,37 @@ struct Word: Identifiable, Hashable, Codable {
         )
     }
 
-    private static func parseCard(from reviewData: [String: Any]?) -> Card? {
+    private init(
+        id: String,
+        definition: String,
+        baseForm: String,
+        surfaceForm: String,
+        transliteration: String,
+        mnemonic: String?,
+        contexts: [String],
+        sentence: SentenceContext?,
+        card: Card?,
+        isDue: Bool,
+        audioFileName: String?,
+        playAt: TimeInterval?
+    ) {
+        self.id = id
+        self.definition = definition
+        self.baseForm = baseForm
+        self.surfaceForm = surfaceForm
+        self.transliteration = transliteration
+        self.mnemonic = mnemonic
+        self.contexts = contexts
+        self.sentence = sentence
+        self.card = card
+        self.isDue = isDue
+        self.audioFileName = audioFileName
+        self.playAt = playAt
+    }
+}
+
+enum ReviewDataParsing {
+    static func card(from reviewData: [String: Any]?) -> Card? {
         guard let reviewData, let due = parseDate(reviewData["due"]) else {
             return nil
         }
@@ -191,32 +221,4 @@ struct Word: Identifiable, Hashable, Codable {
 
         return [withFractional, withoutFractional]
     }()
-
-    private init(
-        id: String,
-        definition: String,
-        baseForm: String,
-        surfaceForm: String,
-        transliteration: String,
-        mnemonic: String?,
-        contexts: [String],
-        sentence: SentenceContext?,
-        card: Card?,
-        isDue: Bool,
-        audioFileName: String?,
-        playAt: TimeInterval?
-    ) {
-        self.id = id
-        self.definition = definition
-        self.baseForm = baseForm
-        self.surfaceForm = surfaceForm
-        self.transliteration = transliteration
-        self.mnemonic = mnemonic
-        self.contexts = contexts
-        self.sentence = sentence
-        self.card = card
-        self.isDue = isDue
-        self.audioFileName = audioFileName
-        self.playAt = playAt
-    }
 }

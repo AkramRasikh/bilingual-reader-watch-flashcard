@@ -19,7 +19,7 @@ while IFS= read -r line || [[ -n "${line}" ]]; do
 done < "${ENV_FILE}"
 set +a
 
-for key in GET_ON_LOAD_DATA_URL UPDATE_WORD_URL DELETE_WORD_URL ADD_IMPROV_WORD_URL CLOUDFLARE_ASSETS_URL; do
+for key in GET_ON_LOAD_DATA_URL UPDATE_WORD_URL DELETE_WORD_URL ADD_IMPROV_WORD_URL UPDATE_SENTENCE_URL CLOUDFLARE_ASSETS_URL; do
   if [[ -z "${!key:-}" ]]; then
     echo "error: ${key} is not set in .env" >&2
     exit 1
@@ -38,6 +38,7 @@ enum GeneratedEnv {
     static let updateWordURL = URL(string: "${UPDATE_WORD_URL}")!
     static let deleteWordURL = URL(string: "${DELETE_WORD_URL}")!
     static let addImprovWordURL = URL(string: "${ADD_IMPROV_WORD_URL}")!
+    static let updateSentenceURL = URL(string: "${UPDATE_SENTENCE_URL}")!
     static let cloudflareAssetsURL = URL(string: "${CLOUDFLARE_ASSETS_URL}")!
 }
 EOF

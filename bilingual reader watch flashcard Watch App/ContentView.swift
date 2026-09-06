@@ -15,6 +15,7 @@ private enum AppRoute: Hashable {
     case shadowing(language: String, contentId: String)
     /// `contentId == nil` means All due words for the language.
     case review(language: String, contentId: String?)
+    case sentenceReview(language: String, contentId: String)
     case improv(language: String)
 }
 
@@ -131,8 +132,12 @@ struct ContentView: View {
                             language: language,
                             topic: topic,
                             dueCount: topicDueCount(language: language, contentId: contentId),
+                            sentenceDueCount: topicSentenceDueCount(language: language, contentId: contentId),
                             onSelectReview: {
                                 path.append(AppRoute.review(language: language, contentId: contentId))
+                            },
+                            onSelectSentenceReview: {
+                                path.append(AppRoute.sentenceReview(language: language, contentId: contentId))
                             },
                             onSelectShadowing: {
                                 path.append(AppRoute.shadowing(language: language, contentId: contentId))
@@ -173,6 +178,27 @@ struct ContentView: View {
                         },
                         onDeleted: { wordId in
                             removeWord(wordId, language: language)
+                        }
+                    )
+                    .navigationBarBackButtonHidden(true)
+                    .toolbar(.hidden, for: .navigationBar)
+
+                case .sentenceReview(let language, let contentId):
+                    SentenceReviewSessionView(
+                        language: language,
+                        initialSentences: bundlesByLanguage[language]?.sentences(forContentId: contentId) ?? [],
+                        currentDueSentences: {
+                            bundlesByLanguage[language]?.sentences(forContentId: contentId) ?? []
+                        },
+                        totalInReview: {
+                            bundlesByLanguage[language]?.sentenceReviewCount(forContentId: contentId) ?? 0
+                        },
+                        onBack: { popRoute() },
+                        onReviewed: { sentenceId, card in
+                            updateReviewedSentence(sentenceId, card: card, language: language)
+                        },
+                        onRemovedReview: { sentenceId in
+                            removeSentenceReview(sentenceId, language: language)
                         }
                     )
                     .navigationBarBackButtonHidden(true)
@@ -260,9 +286,21 @@ struct ContentView: View {
         return bundlesByLanguage[language]?.words(forContentId: contentId).count ?? 0
     }
 
+    private func topicSentenceDueCount(language: String, contentId: String) -> Int {
+        _ = dueClock
+        return bundlesByLanguage[language]?.sentenceDueCount(forContentId: contentId) ?? 0
+    }
+
     private func updateReviewedWord(_ wordId: String, card: Card, language: String) {
         guard var bundle = bundlesByLanguage[language] else { return }
         bundle = bundle.updatingCard(wordId: wordId, card: card)
+        bundlesByLanguage[language] = bundle
+        LocalWordStore.save(language: language, bundle: bundle)
+    }
+
+    private func updateReviewedSentence(_ sentenceId: String, card: Card, language: String) {
+        guard var bundle = bundlesByLanguage[language] else { return }
+        bundle = bundle.updatingSentenceCard(sentenceId: sentenceId, card: card)
         bundlesByLanguage[language] = bundle
         LocalWordStore.save(language: language, bundle: bundle)
     }
@@ -277,6 +315,13 @@ struct ContentView: View {
     private func removeWord(_ wordId: String, language: String) {
         guard var bundle = bundlesByLanguage[language] else { return }
         bundle = bundle.removingWord(id: wordId)
+        bundlesByLanguage[language] = bundle
+        LocalWordStore.save(language: language, bundle: bundle)
+    }
+
+    private func removeSentenceReview(_ sentenceId: String, language: String) {
+        guard var bundle = bundlesByLanguage[language] else { return }
+        bundle = bundle.removingSentenceReview(id: sentenceId)
         bundlesByLanguage[language] = bundle
         LocalWordStore.save(language: language, bundle: bundle)
     }

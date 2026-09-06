@@ -45,7 +45,7 @@ enum LocalWordStore {
             )
             let data = try JSONEncoder().encode(bundle)
             try data.write(to: url, options: [.atomic])
-            print("[LocalWordStore] saved \(bundle.words.count) words / \(bundle.topics.count) topics / \(bundle.adhocSentenceIds.count) adhoc for \(language)")
+            print("[LocalWordStore] saved \(bundle.words.count) words / \(bundle.sentences.count) sentences / \(bundle.topics.count) topics / \(bundle.adhocSentenceIds.count) adhoc for \(language)")
         } catch {
             print("[LocalWordStore] save \(language) failed: \(error)")
         }

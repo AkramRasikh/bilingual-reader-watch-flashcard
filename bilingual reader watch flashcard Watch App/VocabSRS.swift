@@ -2,23 +2,42 @@
 //  VocabSRS.swift
 //  bilingual reader watch flashcard Watch App
 //
-//  Mirrors web vocab path in ReviewSRSToggles + srs-algo.ts:
-//  request_retention: 0.98, maximum_interval: 1000, formattedToBe5am
+//  Mirrors web ReviewSRSToggles + srs-algo.ts:
+//  vocab 0.98 / sentences 0.97, maximum_interval: 1000, formattedToBe5am
 //
 
 import Foundation
 import FSRS
 
 enum VocabSRS {
-    static let requestRetention = 0.98
+    enum ContentType {
+        case vocab
+        case sentences
+
+        var requestRetention: Double {
+            switch self {
+            case .vocab: return 0.98
+            case .sentences: return 0.97
+            }
+        }
+    }
+
+    static let requestRetention = ContentType.vocab.requestRetention
     static let maximumInterval = 1000.0
 
     /// ~23h50m — same threshold as web `isMoreThanADayAhead`.
     private static let dayAheadThreshold: TimeInterval = (23 * 60 + 50) * 60
 
-    private static let scheduler = FSRS(
+    private static let vocabScheduler = FSRS(
         parameters: FSRSParameters(
-            requestRetention: requestRetention,
+            requestRetention: ContentType.vocab.requestRetention,
+            maximumInterval: maximumInterval
+        )
+    )
+
+    private static let sentenceScheduler = FSRS(
+        parameters: FSRSParameters(
+            requestRetention: ContentType.sentences.requestRetention,
             maximumInterval: maximumInterval
         )
     )
@@ -29,9 +48,20 @@ enum VocabSRS {
         return formatter
     }()
 
+    private static func scheduler(for contentType: ContentType) -> FSRS {
+        switch contentType {
+        case .vocab: return vocabScheduler
+        case .sentences: return sentenceScheduler
+        }
+    }
+
     /// Full next cards for Again / Hard / Good / Easy (web `nextScheduledOptions`).
-    static func nextReviewCards(card: Card, now: Date = Date()) throws -> [Rating: Card] {
-        let preview = try scheduler.repeat(card: card, now: now)
+    static func nextReviewCards(
+        card: Card,
+        now: Date = Date(),
+        contentType: ContentType = .vocab
+    ) throws -> [Rating: Card] {
+        let preview = try scheduler(for: contentType).repeat(card: card, now: now)
         var options: [Rating: Card] = [:]
         for rating: Rating in [.again, .hard, .good, .easy] {
             if let next = preview[rating]?.card {
@@ -41,8 +71,12 @@ enum VocabSRS {
         return options
     }
 
-    static func nextReviewOptions(card: Card, now: Date = Date()) throws -> [Rating: Date] {
-        try nextReviewCards(card: card, now: now).mapValues(\.due)
+    static func nextReviewOptions(
+        card: Card,
+        now: Date = Date(),
+        contentType: ContentType = .vocab
+    ) throws -> [Rating: Date] {
+        try nextReviewCards(card: card, now: now, contentType: contentType).mapValues(\.due)
     }
 
     /// Same as ReviewSRSToggles: if next due is ≥ ~1 day ahead, snap due to 5:00 local.

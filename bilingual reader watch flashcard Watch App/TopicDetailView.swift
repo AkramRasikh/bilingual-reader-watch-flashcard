@@ -36,7 +36,9 @@ struct TopicDetailView: View {
     let language: String
     let topic: ContentTopic
     let dueCount: Int
+    let sentenceDueCount: Int
     var onSelectReview: () -> Void = {}
+    var onSelectSentenceReview: () -> Void = {}
     var onSelectShadowing: () -> Void = {}
 
     @ObservedObject private var library = AudioLibrary.shared
@@ -92,11 +94,15 @@ struct TopicDetailView: View {
                 }
             }
 
+            Button("Sentences") {
+                onSelectSentenceReview()
+            }
+
             Button("Shadowing") {
                 onSelectShadowing()
             }
 
-            Text("\(dueCount) due")
+            Text("\(dueCount) words · \(sentenceDueCount) sentences")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()

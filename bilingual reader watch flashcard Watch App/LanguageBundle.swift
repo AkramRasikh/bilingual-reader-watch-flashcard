@@ -32,17 +32,29 @@ struct LanguageBundle: Hashable, Codable {
     var topics: [ContentTopic]
     /// Sentence ids from `{language}/sentences` with `topic == sentence-helper`.
     var adhocSentenceIds: [String]
+    /// Content transcript sentences that already have `reviewData`.
+    var sentences: [ReviewableSentence]
 
     var dueCount: Int {
         words.reduce(0) { $0 + ($1.withFreshDue().isDue ? 1 : 0) }
     }
 
+    var sentenceDueCount: Int {
+        sentences.reduce(0) { $0 + ($1.withFreshDue().isDue ? 1 : 0) }
+    }
+
     var adhocDueCount: Int { words(forContentId: Self.adhocContentId).count }
 
-    init(words: [Word], topics: [ContentTopic], adhocSentenceIds: [String] = []) {
+    init(
+        words: [Word],
+        topics: [ContentTopic],
+        adhocSentenceIds: [String] = [],
+        sentences: [ReviewableSentence] = []
+    ) {
         self.words = words
         self.topics = topics
         self.adhocSentenceIds = adhocSentenceIds
+        self.sentences = sentences
     }
 
     /// All due words, Adhoc (`adhocContentId`), or a content topic.
@@ -100,11 +112,40 @@ struct LanguageBundle: Hashable, Codable {
         return copy
     }
 
+    func sentences(forContentId contentId: String) -> [ReviewableSentence] {
+        sentences
+            .filter { $0.contentId == contentId }
+            .map { $0.withFreshDue() }
+            .filter(\.isDue)
+    }
+
+    func sentenceDueCount(forContentId contentId: String) -> Int {
+        sentences(forContentId: contentId).count
+    }
+
+    func sentenceReviewCount(forContentId contentId: String) -> Int {
+        sentences.filter { $0.contentId == contentId && $0.card != nil }.count
+    }
+
     func updatingCard(wordId: String, card: Card) -> LanguageBundle {
         var copy = self
         copy.words = copy.words.map { word in
             word.id == wordId ? word.withCard(card) : word
         }
+        return copy
+    }
+
+    func updatingSentenceCard(sentenceId: String, card: Card) -> LanguageBundle {
+        var copy = self
+        copy.sentences = copy.sentences.map { sentence in
+            sentence.id == sentenceId ? sentence.withCard(card) : sentence
+        }
+        return copy
+    }
+
+    func removingSentenceReview(id sentenceId: String) -> LanguageBundle {
+        var copy = self
+        copy.sentences.removeAll { $0.id == sentenceId }
         return copy
     }
 
@@ -128,6 +169,7 @@ struct LanguageBundle: Hashable, Codable {
         case words
         case topics
         case adhocSentenceIds
+        case sentences
     }
 
     init(from decoder: Decoder) throws {
@@ -135,6 +177,7 @@ struct LanguageBundle: Hashable, Codable {
         words = try container.decode([Word].self, forKey: .words)
         topics = try container.decode([ContentTopic].self, forKey: .topics)
         adhocSentenceIds = try container.decodeIfPresent([String].self, forKey: .adhocSentenceIds) ?? []
+        sentences = try container.decodeIfPresent([ReviewableSentence].self, forKey: .sentences) ?? []
     }
 
     func encode(to encoder: Encoder) throws {
@@ -142,5 +185,6 @@ struct LanguageBundle: Hashable, Codable {
         try container.encode(words, forKey: .words)
         try container.encode(topics, forKey: .topics)
         try container.encode(adhocSentenceIds, forKey: .adhocSentenceIds)
+        try container.encode(sentences, forKey: .sentences)
     }
 }

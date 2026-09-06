@@ -40,6 +40,43 @@ enum WordReviewClient {
         try await postJSON(url: GeneratedEnv.updateWordURL, body: body)
     }
 
+    /// POST updateSentence — same body as web `/api/updateSentence`.
+    static func updateSentenceReviewData(
+        sentenceId: String,
+        language: String,
+        contentId: String,
+        card: Card
+    ) async throws {
+        let formatted = VocabSRS.cardForPersist(card)
+        let body: [String: Any] = [
+            "language": language,
+            "indexKey": contentId,
+            "id": sentenceId,
+            "fieldToUpdate": [
+                "reviewData": VocabSRS.reviewDataDictionary(from: formatted),
+            ],
+        ]
+        try await postJSON(url: GeneratedEnv.updateSentenceURL, body: body)
+    }
+
+    /// POST updateSentence with `{ removeReview: true }` — strips review, keeps the sentence.
+    static func removeSentenceReview(
+        sentenceId: String,
+        language: String,
+        contentId: String
+    ) async throws {
+        let body: [String: Any] = [
+            "language": language,
+            "indexKey": contentId,
+            "id": sentenceId,
+            "fieldToUpdate": [
+                "removeReview": true,
+            ],
+        ]
+        print("[WordReviewClient] removeSentenceReview \(body)")
+        try await postJSON(url: GeneratedEnv.updateSentenceURL, body: body)
+    }
+
     /// POST deleteWord — same as web vocab trash (`isRemoveReview: true`).
     static func deleteWord(
         wordId: String,
