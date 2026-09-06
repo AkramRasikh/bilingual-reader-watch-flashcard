@@ -58,10 +58,7 @@ struct ContentView: View {
                                 ProgressView()
                                     .scaleEffect(0.7)
                             } else if let bundle = bundlesByLanguage[language] {
-                                Text("\(dueCount(bundle))")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                                    .monospacedDigit()
+                                languageDueLabel(bundle)
                             }
                         }
                     }
@@ -276,9 +273,20 @@ struct ContentView: View {
         }
     }
 
-    private func dueCount(_ bundle: LanguageBundle) -> Int {
-        _ = dueClock
-        return bundle.dueCount
+    private func languageDueLabel(_ bundle: LanguageBundle) -> some View {
+        let _ = dueClock
+        let wordsDue = bundle.dueCount
+        let sentencesDue = bundle.sentenceDueCount
+        return HStack(spacing: 4) {
+            Text("\(wordsDue)")
+            if sentencesDue > 0 {
+                Text("·")
+                Text("\(sentencesDue)")
+            }
+        }
+        .font(.caption2)
+        .foregroundStyle(.secondary)
+        .monospacedDigit()
     }
 
     private func topicDueCount(language: String, contentId: String) -> Int {

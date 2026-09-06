@@ -39,8 +39,16 @@ struct LanguageBundle: Hashable, Codable {
         words.reduce(0) { $0 + ($1.withFreshDue().isDue ? 1 : 0) }
     }
 
+    var wordReviewCount: Int {
+        words.reduce(0) { $0 + ($1.card != nil ? 1 : 0) }
+    }
+
     var sentenceDueCount: Int {
         sentences.reduce(0) { $0 + ($1.withFreshDue().isDue ? 1 : 0) }
+    }
+
+    var sentenceReviewCount: Int {
+        sentences.count
     }
 
     var adhocDueCount: Int { words(forContentId: Self.adhocContentId).count }
@@ -59,26 +67,32 @@ struct LanguageBundle: Hashable, Codable {
 
     /// All due words, Adhoc (`adhocContentId`), or a content topic.
     func words(forContentId contentId: String?) -> [Word] {
-        let filtered: [Word]
-        if contentId == Self.adhocContentId {
-            let sentenceIds = Set(adhocSentenceIds)
-            filtered = words.filter { word in
-                guard let context = word.contexts.first else { return false }
-                return sentenceIds.contains(context)
-            }
-        } else if let contentId {
-            guard let topic = topics.first(where: { $0.id == contentId }) else { return [] }
-            let sentenceIds = Set(topic.sentenceIds)
-            filtered = words.filter { word in
-                guard let context = word.contexts.first else { return false }
-                return sentenceIds.contains(context)
-            }
-        } else {
-            filtered = words
-        }
-        return filtered
+        wordsMatching(contentId: contentId)
             .map { withStandaloneAudioIfNeeded($0).withFreshDue() }
             .filter(\.isDue)
+    }
+
+    func wordReviewCount(forContentId contentId: String?) -> Int {
+        wordsMatching(contentId: contentId).filter { $0.card != nil }.count
+    }
+
+    private func wordsMatching(contentId: String?) -> [Word] {
+        if contentId == Self.adhocContentId {
+            let sentenceIds = Set(adhocSentenceIds)
+            return words.filter { word in
+                guard let context = word.contexts.first else { return false }
+                return sentenceIds.contains(context)
+            }
+        }
+        if let contentId {
+            guard let topic = topics.first(where: { $0.id == contentId }) else { return [] }
+            let sentenceIds = Set(topic.sentenceIds)
+            return words.filter { word in
+                guard let context = word.contexts.first else { return false }
+                return sentenceIds.contains(context)
+            }
+        }
+        return words
     }
 
     /// Cached bundles may predate audio attachment; clip is `{sentenceId}.mp3`.
@@ -90,11 +104,28 @@ struct LanguageBundle: Hashable, Codable {
         return word.withAudio(fileName: sentenceId, playAt: 0)
     }
 
-    /// All topics, sorted by due count (desc). Zero-due topics stay in the list.
-    var topicsByDueCount: [(topic: ContentTopic, count: Int)] {
+    /// All topics, sorted by combined due count (desc). Zero-due topics stay in the list.
+    var topicsByDueCount: [(topic: ContentTopic, words: (due: Int, total: Int), sentences: (due: Int, total: Int))] {
         topics
-            .map { topic in (topic: topic, count: words(forContentId: topic.id).count) }
-            .sorted { $0.count > $1.count }
+            .map { topic in
+                (
+                    topic: topic,
+                    words: (
+                        due: words(forContentId: topic.id).count,
+                        total: wordReviewCount(forContentId: topic.id)
+                    ),
+                    sentences: (
+                        due: sentenceDueCount(forContentId: topic.id),
+                        total: sentenceReviewCount(forContentId: topic.id)
+                    )
+                )
+            }
+            .sorted {
+                let left = $0.words.due + $0.sentences.due
+                let right = $1.words.due + $1.sentences.due
+                if left != right { return left > right }
+                return $0.topic.title < $1.topic.title
+            }
     }
 
     /// Merge a newly uploaded Adhoc word. Non-due cards still register their sentence id.

@@ -21,7 +21,7 @@ struct LanguageTopicsView: View {
         language.prefix(1).uppercased() + language.dropFirst()
     }
 
-    private var topicsByDueCount: [(topic: ContentTopic, count: Int)] {
+    private var topicsByDueCount: [(topic: ContentTopic, words: (due: Int, total: Int), sentences: (due: Int, total: Int))] {
         _ = dueClock
         return bundle.topicsByDueCount
     }
@@ -44,16 +44,17 @@ struct LanguageTopicsView: View {
                             Text("Review")
                                 .fontWeight(.semibold)
                             Spacer()
-                            Text("\(bundle.adhocDueCount)")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                                .monospacedDigit()
+                            dueTotalLabel(
+                                due: bundle.adhocDueCount,
+                                total: bundle.wordReviewCount(forContentId: LanguageBundle.adhocContentId),
+                                suffix: "w"
+                            )
                         }
                     }
                 }
             }
 
-            if bundle.dueCount == 0 && bundle.topics.isEmpty {
+            if bundle.dueCount == 0 && bundle.sentenceDueCount == 0 && bundle.topics.isEmpty {
                 emptyMessage("No data for \(displayName)")
             } else {
                 if bundle.dueCount > 0 {
@@ -64,10 +65,7 @@ struct LanguageTopicsView: View {
                             Text("All")
                                 .fontWeight(.semibold)
                             Spacer()
-                            Text("\(bundle.dueCount)")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                                .monospacedDigit()
+                            dueTotalLabel(due: bundle.dueCount, total: bundle.wordReviewCount, suffix: "w")
                         }
                     }
                 }
@@ -96,20 +94,31 @@ struct LanguageTopicsView: View {
                                         .multilineTextAlignment(.leading)
                                         .lineLimit(2)
                                     Spacer(minLength: 4)
-                                    Text("\(row.count)")
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-                                        .monospacedDigit()
+                                    VStack(alignment: .trailing, spacing: 1) {
+                                        if row.words.total > 0 {
+                                            dueTotalLabel(due: row.words.due, total: row.words.total, suffix: "w")
+                                        }
+                                        if row.sentences.total > 0 {
+                                            dueTotalLabel(due: row.sentences.due, total: row.sentences.total, suffix: "s")
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
-                } else if bundle.dueCount == 0 {
-                    emptyMessage("No words due")
+                } else if bundle.dueCount == 0 && bundle.sentenceDueCount == 0 {
+                    emptyMessage("Nothing due")
                 }
             }
         }
         .navigationTitle(displayName)
+    }
+
+    private func dueTotalLabel(due: Int, total: Int, suffix: String) -> some View {
+        Text("\(due)/\(max(total, due)) \(suffix)")
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+            .monospacedDigit()
     }
 
     private func isAudioSaved(_ topic: ContentTopic) -> Bool {
