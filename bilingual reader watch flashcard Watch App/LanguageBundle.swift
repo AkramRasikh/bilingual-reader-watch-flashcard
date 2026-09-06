@@ -82,8 +82,29 @@ struct LanguageBundle: Hashable, Codable {
         .sorted { $0.count > $1.count }
     }
 
+    /// Merge a newly uploaded Adhoc word. Non-due cards still register their sentence id.
+    func insertingAdhocWord(_ word: Word) -> LanguageBundle {
+        var copy = self
+        if let sentenceId = word.contexts.first,
+           !copy.adhocSentenceIds.contains(sentenceId)
+        {
+            copy.adhocSentenceIds.append(sentenceId)
+        }
+        let hydrated = copy.withStandaloneAudioIfNeeded(word)
+        if hydrated.isDue, !copy.words.contains(where: { $0.id == hydrated.id }) {
+            copy.words.insert(hydrated, at: 0)
+        }
+        return copy
+    }
+
     func removingWord(id wordId: String) -> LanguageBundle {
         var copy = self
+        if let word = words.first(where: { $0.id == wordId }),
+           let sentenceId = word.contexts.first,
+           adhocSentenceIds.contains(sentenceId)
+        {
+            copy.adhocSentenceIds.removeAll { $0 == sentenceId }
+        }
         copy.words.removeAll { $0.id == wordId }
         return copy
     }

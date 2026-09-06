@@ -10,11 +10,13 @@ struct FlashcardView: View {
     let word: Word
     var language: String = ""
     var remainingCount: Int = 0
+    var adhocSentenceIds: [String] = []
     var onBack: () -> Void = {}
     var onReviewed: (String) -> Void = { _ in }
     var onDeleted: (String) -> Void = { _ in }
 
     @ObservedObject private var audioPlayer = WordAudioPlayer.shared
+    @ObservedObject private var audioLibrary = AudioLibrary.shared
     @State private var isRevealed = false
     @State private var formsPage = 0
     @State private var actionsPage = 0
@@ -27,12 +29,15 @@ struct FlashcardView: View {
     private let gradeButtons: [Rating] = [.again, .hard, .good, .easy]
 
     private var isThisWordPlaying: Bool {
-        guard word.canPlayAudio,
-              let fileName = word.audioFileName,
-              let url = WordAudioPlayer.audioURL(fileName: fileName, language: language)
-        else { return false }
-        let key = "\(url.absoluteString)#\(word.audioCue)"
+        guard word.canPlayAudio, let fileName = word.audioFileName else { return false }
+        let key = WordAudioPlayer.itemKey(fileName: fileName, language: language, cue: word.audioCue)
         return audioPlayer.isPlaying && audioPlayer.activeKey == key
+    }
+
+    private var isLocalAudio: Bool {
+        _ = audioLibrary.generation
+        guard let fileName = word.audioFileName else { return false }
+        return AudioFileStore.hasFile(language: language, fileName: fileName)
     }
 
     var body: some View {
@@ -63,17 +68,23 @@ struct FlashcardView: View {
                     }
 
                 if word.canPlayAudio {
-                    Button {
-                        guard let fileName = word.audioFileName else { return }
-                        audioPlayer.toggle(fileName: fileName, language: language, cue: word.audioCue)
-                    } label: {
-                        Image(systemName: isThisWordPlaying ? "pause.fill" : "play.fill")
-                            .font(.system(size: 12, weight: .bold))
-                            .frame(width: 28, height: 28)
-                            .contentShape(Rectangle())
+                    VStack(spacing: 0) {
+                        Button {
+                            guard let fileName = word.audioFileName else { return }
+                            audioPlayer.toggle(fileName: fileName, language: language, cue: word.audioCue)
+                        } label: {
+                            Image(systemName: isThisWordPlaying ? "pause.fill" : "play.fill")
+                                .font(.system(size: 12, weight: .bold))
+                                .frame(width: 28, height: 22)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(isThisWordPlaying ? "Pause" : "Play")
+
+                        Text(isLocalAudio ? "Local" : "Streaming")
+                            .font(.system(size: 8, weight: .semibold))
+                            .foregroundStyle(.secondary)
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(isThisWordPlaying ? "Pause" : "Play")
                 }
 
                 if remainingCount > 0 {
@@ -297,7 +308,11 @@ struct FlashcardView: View {
         defer { isSubmitting = false }
 
         do {
-            try await WordReviewClient.deleteWord(wordId: word.id, language: language)
+            try await WordReviewClient.deleteWord(
+                wordId: word.id,
+                language: language,
+                additionalContext: additionalContextForDelete
+            )
             print("[vocab SRS] deleted \(word.id)")
             audioPlayer.stop()
             onDeleted(word.id)
@@ -305,6 +320,14 @@ struct FlashcardView: View {
             print("[vocab SRS] delete failed: \(error)")
             errorMessage = "Delete failed"
         }
+    }
+
+    /// Helper sentence id for `deleteWord.additionalContext` — only Adhoc words.
+    private var additionalContextForDelete: [String] {
+        guard let sentenceId = word.contexts.first,
+              adhocSentenceIds.contains(sentenceId)
+        else { return [] }
+        return [sentenceId]
     }
 
     private var primaryFormsPage: some View {

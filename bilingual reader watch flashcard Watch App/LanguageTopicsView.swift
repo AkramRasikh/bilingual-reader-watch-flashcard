@@ -12,6 +12,9 @@ struct LanguageTopicsView: View {
     let bundle: LanguageBundle
     var onSelectImprov: () -> Void = {}
     var onSelectReview: (_ contentId: String?) -> Void = { _ in }
+    var onSelectTopic: (_ contentId: String) -> Void = { _ in }
+
+    @ObservedObject private var audioLibrary = AudioLibrary.shared
 
     private var displayName: String {
         language.prefix(1).uppercased() + language.dropFirst()
@@ -70,9 +73,21 @@ struct LanguageTopicsView: View {
                     Section("Content") {
                         ForEach(topicsWithDue, id: \.topic.id) { row in
                             Button {
-                                onSelectReview(row.topic.id)
+                                onSelectTopic(row.topic.id)
                             } label: {
                                 HStack(alignment: .top, spacing: 6) {
+                                    Circle()
+                                        .fill(isAudioSaved(row.topic) ? Color.green : Color.clear)
+                                        .frame(width: 7, height: 7)
+                                        .overlay(
+                                            Circle()
+                                                .stroke(
+                                                    Color.secondary.opacity(0.35),
+                                                    lineWidth: isAudioSaved(row.topic) ? 0 : 1
+                                                )
+                                        )
+                                        .padding(.top, 3)
+
                                     Text(row.topic.title)
                                         .font(.caption2)
                                         .multilineTextAlignment(.leading)
@@ -90,6 +105,11 @@ struct LanguageTopicsView: View {
             }
         }
         .navigationTitle(displayName)
+    }
+
+    private func isAudioSaved(_ topic: ContentTopic) -> Bool {
+        _ = audioLibrary.generation
+        return AudioFileStore.hasFile(language: language, fileName: topic.title)
     }
 
     @ViewBuilder

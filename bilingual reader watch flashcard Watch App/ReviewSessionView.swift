@@ -10,6 +10,7 @@ import SwiftUI
 struct ReviewSessionView: View {
     let language: String
     let initialWords: [Word]
+    var adhocSentenceIds: [String] = []
     var onBack: () -> Void = {}
     /// Called with the reviewed/deleted word id so the parent can update the language bundle.
     var onWordRemoved: (String) -> Void = { _ in }
@@ -24,6 +25,7 @@ struct ReviewSessionView: View {
                     word: word,
                     language: language,
                     remainingCount: queue.count,
+                    adhocSentenceIds: adhocSentenceIds,
                     onBack: onBack,
                     onReviewed: { wordId in
                         removeFromQueue(wordId: wordId)

@@ -9,6 +9,7 @@ import SwiftUI
 
 private enum AppRoute: Hashable {
     case language(String)
+    case topic(language: String, contentId: String)
     /// `contentId == nil` means All due words for the language.
     case review(language: String, contentId: String?)
     case improv(language: String)
@@ -112,17 +113,39 @@ struct ContentView: View {
                         },
                         onSelectReview: { contentId in
                             path.append(AppRoute.review(language: language, contentId: contentId))
+                        },
+                        onSelectTopic: { contentId in
+                            path.append(AppRoute.topic(language: language, contentId: contentId))
                         }
                     )
 
+                case .topic(let language, let contentId):
+                    if let topic = bundlesByLanguage[language]?.topics.first(where: { $0.id == contentId }) {
+                        TopicDetailView(
+                            language: language,
+                            topic: topic,
+                            dueCount: bundlesByLanguage[language]?.words(forContentId: contentId).count ?? 0,
+                            onSelectReview: {
+                                path.append(AppRoute.review(language: language, contentId: contentId))
+                            }
+                        )
+                    } else {
+                        Text("Content unavailable")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+
                 case .improv(let language):
-                    ImprovView(language: language)
+                    ImprovView(language: language) { word in
+                        insertAdhocWord(word, language: language)
+                    }
 
                 case .review(let language, let contentId):
                     let words = bundlesByLanguage[language]?.words(forContentId: contentId) ?? []
                     ReviewSessionView(
                         language: language,
                         initialWords: words,
+                        adhocSentenceIds: bundlesByLanguage[language]?.adhocSentenceIds ?? [],
                         onBack: { popRoute() },
                         onWordRemoved: { wordId in
                             removeWord(wordId, language: language)
@@ -192,6 +215,13 @@ struct ContentView: View {
             try? await Task.sleep(nanoseconds: 2_000_000_000)
             loadError = nil
         }
+    }
+
+    private func insertAdhocWord(_ word: Word, language: String) {
+        var bundle = bundlesByLanguage[language] ?? LanguageBundle(words: [], topics: [])
+        bundle = bundle.insertingAdhocWord(word)
+        bundlesByLanguage[language] = bundle
+        LocalWordStore.save(language: language, bundle: bundle)
     }
 
     private func removeWord(_ wordId: String, language: String) {

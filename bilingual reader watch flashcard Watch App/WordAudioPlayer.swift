@@ -2,7 +2,8 @@
 //  WordAudioPlayer.swift
 //  bilingual reader watch flashcard Watch App
 //
-//  Streams topic MP3s from Cloudflare (web getAudioURL) — no disk cache.
+//  Plays topic MP3s from local storage when saved, otherwise streams
+//  from Cloudflare (web getAudioURL).
 //
 
 import AVFoundation
@@ -41,22 +42,26 @@ final class WordAudioPlayer: ObservableObject {
     }
 
     /// Same shape as web `getAudioURL(title, language)`.
-    static func audioURL(fileName: String, language: String) -> URL? {
+    nonisolated static func audioURL(fileName: String, language: String) -> URL? {
         let base = GeneratedEnv.cloudflareAssetsURL.absoluteString
         let trimmedBase = base.hasSuffix("/") ? base : base + "/"
         let encodedName = fileName.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? fileName
         return URL(string: "\(trimmedBase)\(language)-audio/\(encodedName).mp3")
     }
 
+    nonisolated static func itemKey(fileName: String, language: String, cue: TimeInterval) -> String {
+        "\(language)\u{1f}\(fileName)#\(cue)"
+    }
+
     func toggle(fileName: String, language: String, cue: TimeInterval) {
-        guard let url = Self.audioURL(fileName: fileName, language: language) else { return }
-        let key = "\(url.absoluteString)#\(cue)"
+        let key = Self.itemKey(fileName: fileName, language: language, cue: cue)
 
         if isPlaying, activeKey == key {
             pause()
             return
         }
 
+        guard let url = AudioFileStore.playbackURL(fileName: fileName, language: language) else { return }
         play(url: url, cue: cue, key: key)
     }
 
