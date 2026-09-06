@@ -73,13 +73,11 @@ struct LanguageBundle: Hashable, Codable {
         return word.withAudio(fileName: sentenceId, playAt: 0)
     }
 
-    /// Topics that still have due cards, sorted by due count (desc).
-    var topicsWithDue: [(topic: ContentTopic, count: Int)] {
-        topics.compactMap { topic in
-            let count = words(forContentId: topic.id).count
-            return count > 0 ? (topic, count) : nil
-        }
-        .sorted { $0.count > $1.count }
+    /// All topics, sorted by due count (desc). Zero-due topics stay in the list.
+    var topicsByDueCount: [(topic: ContentTopic, count: Int)] {
+        topics
+            .map { topic in (topic: topic, count: words(forContentId: topic.id).count) }
+            .sorted { $0.count > $1.count }
     }
 
     /// Merge a newly uploaded Adhoc word. Non-due cards still register their sentence id.

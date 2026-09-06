@@ -20,8 +20,8 @@ struct LanguageTopicsView: View {
         language.prefix(1).uppercased() + language.dropFirst()
     }
 
-    private var topicsWithDue: [(topic: ContentTopic, count: Int)] {
-        bundle.topicsWithDue
+    private var topicsByDueCount: [(topic: ContentTopic, count: Int)] {
+        bundle.topicsByDueCount
     }
 
     var body: some View {
@@ -52,26 +52,26 @@ struct LanguageTopicsView: View {
 
             if bundle.dueCount == 0 && bundle.topics.isEmpty {
                 emptyMessage("No data for \(displayName)")
-            } else if bundle.dueCount == 0 {
-                emptyMessage("No words due")
             } else {
-                Button {
-                    onSelectReview(nil)
-                } label: {
-                    HStack {
-                        Text("All")
-                            .fontWeight(.semibold)
-                        Spacer()
-                        Text("\(bundle.dueCount)")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .monospacedDigit()
+                if bundle.dueCount > 0 {
+                    Button {
+                        onSelectReview(nil)
+                    } label: {
+                        HStack {
+                            Text("All")
+                                .fontWeight(.semibold)
+                            Spacer()
+                            Text("\(bundle.dueCount)")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                        }
                     }
                 }
 
-                if !topicsWithDue.isEmpty {
+                if !topicsByDueCount.isEmpty {
                     Section("Content") {
-                        ForEach(topicsWithDue, id: \.topic.id) { row in
+                        ForEach(topicsByDueCount, id: \.topic.id) { row in
                             Button {
                                 onSelectTopic(row.topic.id)
                             } label: {
@@ -101,6 +101,8 @@ struct LanguageTopicsView: View {
                             }
                         }
                     }
+                } else if bundle.dueCount == 0 {
+                    emptyMessage("No words due")
                 }
             }
         }
