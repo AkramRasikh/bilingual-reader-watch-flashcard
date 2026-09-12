@@ -2,8 +2,8 @@
 //  SentenceFlashcardView.swift
 //  bilingual reader watch flashcard Watch App
 //
-//  One due sentence per screen. Target text by default; swipe right for English.
-//  Trash is removeReview (web updateSentence), not delete.
+//  One due sentence per screen. Target text by default; swipe left for English,
+//  swipe right for optional meaning. Trash is removeReview (web updateSentence).
 //
 
 import SwiftUI
@@ -20,7 +20,7 @@ struct SentenceFlashcardView: View {
 
     @ObservedObject private var audioPlayer = WordAudioPlayer.shared
     @ObservedObject private var audioLibrary = AudioLibrary.shared
-    @State private var showsEnglish = false
+    @State private var revealedFace: SentenceRevealedFace = .sentence
     @State private var actionsPage = 0
     @State private var expandedText: SentenceExpandedText?
     @State private var gradeLabels: [Rating: String] = [:]
@@ -41,19 +41,25 @@ struct SentenceFlashcardView: View {
     }
 
     private var previousDisplayedText: String? {
-        let text = showsEnglish ? sentence.previousBaseLang : sentence.previousTargetLang
+        guard revealedFace == .english || revealedFace == .sentence else { return nil }
+        let text = revealedFace == .english ? sentence.previousBaseLang : sentence.previousTargetLang
         return text.isEmpty ? nil : text
     }
 
     private var currentDisplayedText: String {
-        if showsEnglish {
+        switch revealedFace {
+        case .english:
             return sentence.baseLang.isEmpty ? "(no translation)" : sentence.baseLang
+        case .meaning:
+            return sentence.displayedMeaning ?? "•"
+        case .sentence:
+            return sentence.targetLang.isEmpty ? "(no sentence)" : sentence.targetLang
         }
-        return sentence.targetLang.isEmpty ? "(no sentence)" : sentence.targetLang
     }
 
     private var nextDisplayedText: String? {
-        let text = showsEnglish ? sentence.nextBaseLang : sentence.nextTargetLang
+        guard revealedFace == .english || revealedFace == .sentence else { return nil }
+        let text = revealedFace == .english ? sentence.nextBaseLang : sentence.nextTargetLang
         return text.isEmpty ? nil : text
     }
 
@@ -63,14 +69,14 @@ struct SentenceFlashcardView: View {
             if let previous = previousDisplayedText {
                 Text(previous)
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(Color.pink)
+                    .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .minimumScaleFactor(0.7)
             }
             Text(currentDisplayedText)
                 .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(revealedFace == .meaning && sentence.displayedMeaning == nil ? Color.secondary : Color.white)
                 .multilineTextAlignment(.center)
                 .lineLimit(3)
                 .minimumScaleFactor(0.7)
@@ -102,12 +108,13 @@ struct SentenceFlashcardView: View {
             HStack(alignment: .top, spacing: 4) {
                 Button(action: onBack) {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 12, weight: .bold))
-                        .frame(width: 28, height: 28)
+                        .font(.system(size: 14, weight: .bold))
+                        .frame(width: 36, height: 36)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Back")
+                .zIndex(1)
 
                 Text("\(remainingDue)/\(max(totalInReview, remainingDue))")
                     .font(.system(size: 9, weight: .semibold))
@@ -133,34 +140,32 @@ struct SentenceFlashcardView: View {
                         .accessibilityLabel(audioPlayer.playbackRate < 1 ? "Normal speed" : "Slow to 0.75")
                         .accessibilityAddTraits(audioPlayer.playbackRate < 1 ? .isSelected : [])
 
-                        VStack(spacing: 0) {
-                            Button {
-                                guard let fileName = sentence.audioFileName else { return }
-                                if isAudioPlaying {
-                                    audioPlayer.pause()
-                                } else {
-                                    audioPlayer.toggle(
-                                        fileName: fileName,
-                                        language: language,
-                                        cue: sentence.audioCue
-                                    )
-                                }
-                            } label: {
-                                Image(systemName: isAudioPlaying ? "stop.fill" : "play.fill")
-                                    .font(.system(size: 12, weight: .bold))
-                                    .frame(width: 28, height: 22)
-                                    .contentShape(Rectangle())
+                        Button {
+                            guard let fileName = sentence.audioFileName else { return }
+                            if isAudioPlaying {
+                                audioPlayer.pause()
+                            } else {
+                                audioPlayer.toggle(
+                                    fileName: fileName,
+                                    language: language,
+                                    cue: sentence.audioCue
+                                )
                             }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel(isAudioPlaying ? "Stop" : "Play")
-
-                            Text(isLocalAudio ? "Local" : "Streaming")
-                                .font(.system(size: 8, weight: .semibold))
-                                .foregroundStyle(.secondary)
+                        } label: {
+                            Image(systemName: isAudioPlaying ? "stop.fill" : "play.fill")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundStyle(isLocalAudio ? Color.green : Color.primary)
+                                .frame(width: 36, height: 32)
+                                .contentShape(Rectangle())
                         }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(isAudioPlaying ? "Stop" : "Play")
+                        .accessibilityHint(isLocalAudio ? "Saved audio" : "Streaming audio")
                     }
                 }
             }
+            .zIndex(10)
+            .background(.background)
             .frame(maxWidth: .infinity, alignment: .leading)
 
             sentenceBody
@@ -170,7 +175,7 @@ struct SentenceFlashcardView: View {
                 .gesture(languageSwipeGesture)
                 .onLongPressGesture {
                     expandedText = SentenceExpandedText(
-                        title: showsEnglish ? "English" : "Sentence",
+                        title: revealedFace.title,
                         body: expandedBody
                     )
                 }
@@ -234,7 +239,7 @@ struct SentenceFlashcardView: View {
             }
         }
         .task(id: sentence.id) {
-            showsEnglish = false
+            revealedFace = .sentence
             actionsPage = 0
             errorMessage = nil
             await computeNextReviews()
@@ -247,7 +252,11 @@ struct SentenceFlashcardView: View {
                 let horizontal = value.translation.width
                 guard abs(horizontal) > abs(value.translation.height) else { return }
                 withAnimation(.easeInOut(duration: 0.15)) {
-                    showsEnglish = horizontal > 0
+                    if horizontal < 0 {
+                        revealedFace = revealedFace.swipingLeft
+                    } else {
+                        revealedFace = revealedFace.swipingRight
+                    }
                 }
             }
     }
@@ -345,6 +354,36 @@ struct SentenceFlashcardView: View {
     }
 }
 
+private enum SentenceRevealedFace {
+    case sentence
+    case english
+    case meaning
+
+    var title: String {
+        switch self {
+        case .sentence: return "Sentence"
+        case .english: return "English"
+        case .meaning: return "Meaning"
+        }
+    }
+
+    var swipingLeft: SentenceRevealedFace {
+        switch self {
+        case .meaning: return .sentence
+        case .sentence: return .english
+        case .english: return .english
+        }
+    }
+
+    var swipingRight: SentenceRevealedFace {
+        switch self {
+        case .english: return .sentence
+        case .sentence: return .meaning
+        case .meaning: return .meaning
+        }
+    }
+}
+
 private struct SentenceExpandedText: Identifiable {
     let id = UUID()
     let title: String
@@ -370,6 +409,7 @@ private extension Rating {
                 "id": "preview-sentence",
                 "targetLang": "是我们的荣幸，能够在这里见到各位来宾，并一起庆祝这个特别的日子。",
                 "baseLang": "It's our honor to meet all of you here and celebrate this special day together.",
+                "meaning": "We're glad everyone could come celebrate with us.",
                 "time": 12.5,
                 "reviewData": [
                     "due": "2026-03-24T05:00:00.000Z",

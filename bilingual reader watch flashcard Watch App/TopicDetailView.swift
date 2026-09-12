@@ -112,6 +112,7 @@ struct TopicDetailView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 4)
         .navigationTitle(topic.title)
+        .raisedWatchBackButton()
     }
 
     @ViewBuilder
@@ -123,5 +124,49 @@ struct TopicDetailView: View {
             ProgressView()
                 .frame(width: 28, height: 36)
         }
+    }
+}
+
+/// Keeps the back chevron in the top nav chrome and above page content so
+/// overlapping labels/buttons cannot steal the tap.
+extension View {
+    func raisedWatchBackButton() -> some View {
+        modifier(RaisedWatchBackButtonModifier())
+    }
+}
+
+private struct RaisedWatchBackButtonModifier: ViewModifier {
+    @Environment(\.dismiss) private var dismiss
+
+    func body(content: Content) -> some View {
+        content
+            .navigationBarBackButtonHidden(true)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 16, weight: .bold))
+                            .frame(width: 44, height: 40)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Back")
+                }
+            }
+            .overlay(alignment: .topLeading) {
+                Button {
+                    dismiss()
+                } label: {
+                    Color.clear
+                        .frame(width: 48, height: 36)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .offset(x: -6, y: -20)
+                .zIndex(1000)
+                .accessibilityHidden(true)
+            }
     }
 }

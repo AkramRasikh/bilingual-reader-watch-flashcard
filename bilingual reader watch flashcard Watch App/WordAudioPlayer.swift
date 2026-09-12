@@ -253,7 +253,7 @@ final class WordAudioPlayer: ObservableObject {
     private func activateSession() {
         do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, mode: .default)
+            try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
             try session.setActive(true)
         } catch {
             print("[WordAudioPlayer] session error: \(error)")

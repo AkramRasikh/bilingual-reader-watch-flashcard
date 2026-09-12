@@ -15,6 +15,8 @@ struct ReviewableSentence: Identifiable, Hashable, Codable {
     let contentId: String
     let targetLang: String
     let baseLang: String
+    /// Optional gloss/paraphrase from content `meaning`. Missing on many sentences.
+    let meaning: String?
     /// Neighbor transcript lines (not necessarily in review). Empty if first/last.
     let previousTargetLang: String
     let previousBaseLang: String
@@ -33,6 +35,12 @@ struct ReviewableSentence: Identifiable, Hashable, Codable {
     }
 
     var audioCue: TimeInterval { time ?? 0 }
+
+    /// Non-empty `meaning` after trimming. Nil when the field is absent or blank.
+    var displayedMeaning: String? {
+        let trimmed = meaning?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? nil : trimmed
+    }
 
     var hasPrevious: Bool {
         !previousTargetLang.isEmpty || !previousBaseLang.isEmpty
@@ -53,11 +61,14 @@ struct ReviewableSentence: Identifiable, Hashable, Codable {
         let targetLang = dictionary["targetLang"] as? String ?? ""
         let baseLang = dictionary["baseLang"] as? String ?? ""
         guard !targetLang.isEmpty || !baseLang.isEmpty else { return nil }
+        let rawMeaning = (dictionary["meaning"] as? String)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
 
         self.id = id
         self.contentId = contentId
         self.targetLang = targetLang
         self.baseLang = baseLang
+        self.meaning = rawMeaning?.isEmpty == false ? rawMeaning : nil
         self.previousTargetLang = previous.targetLang
         self.previousBaseLang = previous.baseLang
         self.nextTargetLang = next.targetLang
@@ -74,6 +85,7 @@ struct ReviewableSentence: Identifiable, Hashable, Codable {
             contentId: contentId,
             targetLang: targetLang,
             baseLang: baseLang,
+            meaning: meaning,
             previousTargetLang: previousTargetLang,
             previousBaseLang: previousBaseLang,
             nextTargetLang: nextTargetLang,
@@ -91,6 +103,7 @@ struct ReviewableSentence: Identifiable, Hashable, Codable {
             contentId: contentId,
             targetLang: targetLang,
             baseLang: baseLang,
+            meaning: meaning,
             previousTargetLang: previousTargetLang,
             previousBaseLang: previousBaseLang,
             nextTargetLang: nextTargetLang,
@@ -107,6 +120,7 @@ struct ReviewableSentence: Identifiable, Hashable, Codable {
         contentId: String,
         targetLang: String,
         baseLang: String,
+        meaning: String?,
         previousTargetLang: String,
         previousBaseLang: String,
         nextTargetLang: String,
@@ -120,6 +134,7 @@ struct ReviewableSentence: Identifiable, Hashable, Codable {
         self.contentId = contentId
         self.targetLang = targetLang
         self.baseLang = baseLang
+        self.meaning = meaning
         self.previousTargetLang = previousTargetLang
         self.previousBaseLang = previousBaseLang
         self.nextTargetLang = nextTargetLang
@@ -131,7 +146,7 @@ struct ReviewableSentence: Identifiable, Hashable, Codable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, contentId, targetLang, baseLang
+        case id, contentId, targetLang, baseLang, meaning
         case previousTargetLang, previousBaseLang, nextTargetLang, nextBaseLang
         case time, card, isDue, audioFileName
     }
@@ -142,6 +157,7 @@ struct ReviewableSentence: Identifiable, Hashable, Codable {
         contentId = try container.decode(String.self, forKey: .contentId)
         targetLang = try container.decode(String.self, forKey: .targetLang)
         baseLang = try container.decode(String.self, forKey: .baseLang)
+        meaning = try container.decodeIfPresent(String.self, forKey: .meaning)
         previousTargetLang = try container.decodeIfPresent(String.self, forKey: .previousTargetLang) ?? ""
         previousBaseLang = try container.decodeIfPresent(String.self, forKey: .previousBaseLang) ?? ""
         nextTargetLang = try container.decodeIfPresent(String.self, forKey: .nextTargetLang) ?? ""
@@ -158,6 +174,7 @@ struct ReviewableSentence: Identifiable, Hashable, Codable {
         try container.encode(contentId, forKey: .contentId)
         try container.encode(targetLang, forKey: .targetLang)
         try container.encode(baseLang, forKey: .baseLang)
+        try container.encodeIfPresent(meaning, forKey: .meaning)
         try container.encode(previousTargetLang, forKey: .previousTargetLang)
         try container.encode(previousBaseLang, forKey: .previousBaseLang)
         try container.encode(nextTargetLang, forKey: .nextTargetLang)

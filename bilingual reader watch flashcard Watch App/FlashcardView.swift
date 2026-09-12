@@ -68,23 +68,19 @@ struct FlashcardView: View {
                     }
 
                 if word.canPlayAudio {
-                    VStack(spacing: 0) {
-                        Button {
-                            guard let fileName = word.audioFileName else { return }
-                            audioPlayer.toggle(fileName: fileName, language: language, cue: word.audioCue)
-                        } label: {
-                            Image(systemName: isThisWordPlaying ? "pause.fill" : "play.fill")
-                                .font(.system(size: 12, weight: .bold))
-                                .frame(width: 28, height: 22)
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(isThisWordPlaying ? "Pause" : "Play")
-
-                        Text(isLocalAudio ? "Local" : "Streaming")
-                            .font(.system(size: 8, weight: .semibold))
-                            .foregroundStyle(.secondary)
+                    Button {
+                        guard let fileName = word.audioFileName else { return }
+                        audioPlayer.toggle(fileName: fileName, language: language, cue: word.audioCue)
+                    } label: {
+                        Image(systemName: isThisWordPlaying ? "pause.fill" : "play.fill")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(isLocalAudio ? Color.green : Color.primary)
+                            .frame(width: 28, height: 22)
+                            .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(isThisWordPlaying ? "Pause" : "Play")
+                    .accessibilityHint(isLocalAudio ? "Saved audio" : "Streaming audio")
                 }
 
                 if remainingCount > 0 {

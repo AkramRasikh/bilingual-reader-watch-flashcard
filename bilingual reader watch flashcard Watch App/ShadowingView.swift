@@ -61,6 +61,7 @@ struct ShadowingView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .navigationTitle(topic.title)
+        .raisedWatchBackButton()
         .onAppear {
             audioPlayer.startShadowing(fileName: fileName, language: language)
         }
