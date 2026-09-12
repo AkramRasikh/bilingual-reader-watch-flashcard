@@ -110,38 +110,54 @@ struct SentenceFlashcardView: View {
                 .accessibilityLabel("Back")
 
                 Text("\(remainingDue)/\(max(totalInReview, remainingDue))")
-                    .font(.caption2)
-                    .fontWeight(.semibold)
+                    .font(.system(size: 9, weight: .semibold))
                     .monospacedDigit()
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 6)
                     .accessibilityLabel("\(remainingDue) of \(max(totalInReview, remainingDue)) sentences due")
 
                 if sentence.canPlayAudio {
-                    VStack(spacing: 0) {
+                    HStack(alignment: .top, spacing: 2) {
                         Button {
-                            guard let fileName = sentence.audioFileName else { return }
-                            if isAudioPlaying {
-                                audioPlayer.stop()
-                            } else {
-                                audioPlayer.toggle(
-                                    fileName: fileName,
-                                    language: language,
-                                    cue: sentence.audioCue
-                                )
-                            }
+                            audioPlayer.toggleSlowRate()
                         } label: {
-                            Image(systemName: isAudioPlaying ? "stop.fill" : "play.fill")
-                                .font(.system(size: 12, weight: .bold))
-                                .frame(width: 28, height: 22)
+                            Text("0.75×")
+                                .font(.system(size: 11, weight: .semibold))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
+                                .frame(width: 34, height: 26)
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .accessibilityLabel(isAudioPlaying ? "Stop" : "Play")
+                        .foregroundStyle(audioPlayer.playbackRate < 1 ? .orange : .primary)
+                        .accessibilityLabel(audioPlayer.playbackRate < 1 ? "Normal speed" : "Slow to 0.75")
+                        .accessibilityAddTraits(audioPlayer.playbackRate < 1 ? .isSelected : [])
 
-                        Text(isLocalAudio ? "Local" : "Streaming")
-                            .font(.system(size: 8, weight: .semibold))
-                            .foregroundStyle(.secondary)
+                        VStack(spacing: 0) {
+                            Button {
+                                guard let fileName = sentence.audioFileName else { return }
+                                if isAudioPlaying {
+                                    audioPlayer.pause()
+                                } else {
+                                    audioPlayer.toggle(
+                                        fileName: fileName,
+                                        language: language,
+                                        cue: sentence.audioCue
+                                    )
+                                }
+                            } label: {
+                                Image(systemName: isAudioPlaying ? "stop.fill" : "play.fill")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .frame(width: 28, height: 22)
+                                    .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(isAudioPlaying ? "Stop" : "Play")
+
+                            Text(isLocalAudio ? "Local" : "Streaming")
+                                .font(.system(size: 8, weight: .semibold))
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
             }
