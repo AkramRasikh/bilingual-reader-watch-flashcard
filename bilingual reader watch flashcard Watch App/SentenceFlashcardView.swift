@@ -40,6 +40,11 @@ struct SentenceFlashcardView: View {
         return AudioFileStore.hasFile(language: language, fileName: fileName)
     }
 
+    private var sentenceLoopWindow: (start: TimeInterval, end: TimeInterval?) {
+        let duration = audioPlayer.clock.duration
+        return sentence.loopWindow(fileDuration: duration > 0 ? duration : nil)
+    }
+
     private var previousDisplayedText: String? {
         guard revealedFace == .english || revealedFace == .sentence else { return nil }
         let text = revealedFace == .english ? sentence.previousBaseLang : sentence.previousTargetLang
@@ -73,6 +78,7 @@ struct SentenceFlashcardView: View {
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .minimumScaleFactor(0.7)
+                    .layoutPriority(2)
             }
             Text(currentDisplayedText)
                 .font(.system(size: 15, weight: .bold))
@@ -80,6 +86,7 @@ struct SentenceFlashcardView: View {
                 .multilineTextAlignment(.center)
                 .lineLimit(3)
                 .minimumScaleFactor(0.7)
+                .layoutPriority(1)
             if let next = nextDisplayedText {
                 Text(next)
                     .font(.system(size: 12, weight: .medium))
@@ -87,6 +94,7 @@ struct SentenceFlashcardView: View {
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .minimumScaleFactor(0.7)
+                    .layoutPriority(2)
             }
         }
     }
@@ -107,24 +115,38 @@ struct SentenceFlashcardView: View {
         VStack(spacing: 4) {
             HStack(alignment: .top, spacing: 4) {
                 Button(action: onBack) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 14, weight: .bold))
-                        .frame(width: 36, height: 36)
-                        .contentShape(Rectangle())
+                    HStack(spacing: 3) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 10, weight: .bold))
+                        Text("\(remainingDue)/\(max(totalInReview, remainingDue))")
+                            .font(.system(size: 9, weight: .semibold))
+                            .monospacedDigit()
+                        Spacer(minLength: 0)
+                    }
+                    .padding(.top, 6)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Back")
-                .zIndex(1)
-
-                Text("\(remainingDue)/\(max(totalInReview, remainingDue))")
-                    .font(.system(size: 9, weight: .semibold))
-                    .monospacedDigit()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.top, 6)
-                    .accessibilityLabel("\(remainingDue) of \(max(totalInReview, remainingDue)) sentences due")
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityLabel("Back, \(remainingDue) of \(max(totalInReview, remainingDue)) sentences due")
 
                 if sentence.canPlayAudio {
-                    HStack(alignment: .top, spacing: 2) {
+                    HStack(alignment: .top, spacing: 8) {
+                        Button {
+                            let window = sentenceLoopWindow
+                            print("[sentence loop] cue=\(sentence.audioCue) next=\(sentence.nextTime as Any) window=\(window.start)->\(window.end as Any)")
+                            audioPlayer.toggleLoop(start: window.start, end: window.end)
+                        } label: {
+                            Image(systemName: "repeat")
+                                .font(.system(size: 11, weight: .semibold))
+                                .frame(width: 22, height: 26)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(audioPlayer.isLooping ? .orange : .primary)
+                        .accessibilityLabel(audioPlayer.isLooping ? "Stop looping" : "Loop sentence")
+                        .accessibilityAddTraits(audioPlayer.isLooping ? .isSelected : [])
+
                         Button {
                             audioPlayer.toggleSlowRate()
                         } label: {
@@ -148,7 +170,7 @@ struct SentenceFlashcardView: View {
                                 audioPlayer.toggle(
                                     fileName: fileName,
                                     language: language,
-                                    cue: sentence.audioCue
+                                    cue: audioPlayer.isLooping ? sentenceLoopWindow.start : sentence.audioCue
                                 )
                             }
                         } label: {
@@ -169,7 +191,7 @@ struct SentenceFlashcardView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             sentenceBody
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 .padding(.horizontal, 4)
                 .contentShape(Rectangle())
                 .gesture(languageSwipeGesture)
@@ -242,6 +264,7 @@ struct SentenceFlashcardView: View {
             revealedFace = .sentence
             actionsPage = 0
             errorMessage = nil
+            audioPlayer.clearLoop()
             await computeNextReviews()
         }
     }
@@ -432,7 +455,8 @@ private extension Rating {
             next: (
                 targetLang: "请跟我来。",
                 baseLang: "Please come with me."
-            )
+            ),
+            nextTime: 14.0
         )!,
         language: "chinese",
         remainingDue: 3,

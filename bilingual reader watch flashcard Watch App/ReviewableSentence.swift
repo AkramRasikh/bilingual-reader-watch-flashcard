@@ -22,6 +22,8 @@ struct ReviewableSentence: Identifiable, Hashable, Codable {
     let previousBaseLang: String
     let nextTargetLang: String
     let nextBaseLang: String
+    /// Start time of the following transcript line, if any.
+    let nextTime: TimeInterval?
     /// Seconds into the topic MP3 (web transcript `time`).
     let time: TimeInterval?
     let card: Card?
@@ -35,6 +37,38 @@ struct ReviewableSentence: Identifiable, Hashable, Codable {
     }
 
     var audioCue: TimeInterval { time ?? 0 }
+
+    /// Loop window: start is the cue, or 0.5s earlier when this line is 2s or shorter.
+    /// When the start is pulled back, the end is pushed forward by the same amount
+    /// so the original sentence still plays in full.
+    func loopWindow(fileDuration: TimeInterval?) -> (start: TimeInterval, end: TimeInterval?) {
+        let cue = audioCue
+        let hasNeighbor = !nextTargetLang.isEmpty || !nextBaseLang.isEmpty
+        let rawEnd: TimeInterval?
+        if let nextTime, nextTime > cue + 0.05 {
+            rawEnd = nextTime
+        } else if !hasNeighbor, let fileDuration, fileDuration > cue + 0.05 {
+            rawEnd = fileDuration
+        } else {
+            rawEnd = nil
+        }
+        let span = (rawEnd ?? .infinity) - cue
+        let pad: TimeInterval = span <= 2 ? 0.5 : 0
+        let start = max(0, cue - pad)
+        let end = rawEnd.map { min($0 + pad, fileDuration ?? $0 + pad) }
+        return (start, end)
+    }
+
+    /// If `nextTime` is missing (old cache), use the earliest later time in this topic.
+    func withInferredNextTime(among others: [ReviewableSentence]) -> ReviewableSentence {
+        if let nextTime, nextTime > audioCue + 0.05 { return self }
+        let inferred = others
+            .compactMap(\.time)
+            .filter { $0 > audioCue + 0.05 }
+            .min()
+        guard let inferred, inferred != nextTime else { return self }
+        return withNextTime(inferred)
+    }
 
     /// Non-empty `meaning` after trimming. Nil when the field is absent or blank.
     var displayedMeaning: String? {
@@ -52,6 +86,7 @@ struct ReviewableSentence: Identifiable, Hashable, Codable {
         audioFileName: String?,
         previous: (targetLang: String, baseLang: String) = ("", ""),
         next: (targetLang: String, baseLang: String) = ("", ""),
+        nextTime: TimeInterval? = nil,
         now: Date = Date()
     ) {
         guard let id = dictionary["id"] as? String, !id.isEmpty else { return nil }
@@ -73,6 +108,7 @@ struct ReviewableSentence: Identifiable, Hashable, Codable {
         self.previousBaseLang = previous.baseLang
         self.nextTargetLang = next.targetLang
         self.nextBaseLang = next.baseLang
+        self.nextTime = nextTime
         self.time = Self.doubleValue(dictionary["time"])
         self.card = card
         self.isDue = card.map { $0.due < now } ?? false
@@ -90,9 +126,29 @@ struct ReviewableSentence: Identifiable, Hashable, Codable {
             previousBaseLang: previousBaseLang,
             nextTargetLang: nextTargetLang,
             nextBaseLang: nextBaseLang,
+            nextTime: nextTime,
             time: time,
             card: card,
             isDue: card.due < now,
+            audioFileName: audioFileName
+        )
+    }
+
+    func withNextTime(_ nextTime: TimeInterval?) -> ReviewableSentence {
+        ReviewableSentence(
+            id: id,
+            contentId: contentId,
+            targetLang: targetLang,
+            baseLang: baseLang,
+            meaning: meaning,
+            previousTargetLang: previousTargetLang,
+            previousBaseLang: previousBaseLang,
+            nextTargetLang: nextTargetLang,
+            nextBaseLang: nextBaseLang,
+            nextTime: nextTime,
+            time: time,
+            card: card,
+            isDue: isDue,
             audioFileName: audioFileName
         )
     }
@@ -108,6 +164,7 @@ struct ReviewableSentence: Identifiable, Hashable, Codable {
             previousBaseLang: previousBaseLang,
             nextTargetLang: nextTargetLang,
             nextBaseLang: nextBaseLang,
+            nextTime: nextTime,
             time: time,
             card: card,
             isDue: card.map { $0.due < now } ?? false,
@@ -125,6 +182,7 @@ struct ReviewableSentence: Identifiable, Hashable, Codable {
         previousBaseLang: String,
         nextTargetLang: String,
         nextBaseLang: String,
+        nextTime: TimeInterval?,
         time: TimeInterval?,
         card: Card?,
         isDue: Bool,
@@ -139,6 +197,7 @@ struct ReviewableSentence: Identifiable, Hashable, Codable {
         self.previousBaseLang = previousBaseLang
         self.nextTargetLang = nextTargetLang
         self.nextBaseLang = nextBaseLang
+        self.nextTime = nextTime
         self.time = time
         self.card = card
         self.isDue = isDue
@@ -147,7 +206,7 @@ struct ReviewableSentence: Identifiable, Hashable, Codable {
 
     enum CodingKeys: String, CodingKey {
         case id, contentId, targetLang, baseLang, meaning
-        case previousTargetLang, previousBaseLang, nextTargetLang, nextBaseLang
+        case previousTargetLang, previousBaseLang, nextTargetLang, nextBaseLang, nextTime
         case time, card, isDue, audioFileName
     }
 
@@ -162,6 +221,7 @@ struct ReviewableSentence: Identifiable, Hashable, Codable {
         previousBaseLang = try container.decodeIfPresent(String.self, forKey: .previousBaseLang) ?? ""
         nextTargetLang = try container.decodeIfPresent(String.self, forKey: .nextTargetLang) ?? ""
         nextBaseLang = try container.decodeIfPresent(String.self, forKey: .nextBaseLang) ?? ""
+        nextTime = try container.decodeIfPresent(TimeInterval.self, forKey: .nextTime)
         time = try container.decodeIfPresent(TimeInterval.self, forKey: .time)
         card = try container.decodeIfPresent(Card.self, forKey: .card)
         isDue = try container.decode(Bool.self, forKey: .isDue)
@@ -179,6 +239,7 @@ struct ReviewableSentence: Identifiable, Hashable, Codable {
         try container.encode(previousBaseLang, forKey: .previousBaseLang)
         try container.encode(nextTargetLang, forKey: .nextTargetLang)
         try container.encode(nextBaseLang, forKey: .nextBaseLang)
+        try container.encodeIfPresent(nextTime, forKey: .nextTime)
         try container.encodeIfPresent(time, forKey: .time)
         try container.encodeIfPresent(card, forKey: .card)
         try container.encode(isDue, forKey: .isDue)

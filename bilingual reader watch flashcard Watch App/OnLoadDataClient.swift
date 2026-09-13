@@ -184,12 +184,16 @@ enum OnLoadDataClient {
             return sentences.enumerated().compactMap { index, sentence in
                 let previous = index > 0 ? Self.neighborText(from: sentences[index - 1]) : ("", "")
                 let next = index + 1 < sentences.count ? Self.neighborText(from: sentences[index + 1]) : ("", "")
+                let nextTime = index + 1 < sentences.count
+                    ? doubleValue(sentences[index + 1]["time"])
+                    : nil
                 return ReviewableSentence(
                     dictionary: sentence,
                     contentId: contentId,
                     audioFileName: audioFileName,
                     previous: previous,
                     next: next,
+                    nextTime: nextTime,
                     now: now
                 )
             }

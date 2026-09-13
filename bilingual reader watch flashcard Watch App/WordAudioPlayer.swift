@@ -46,6 +46,7 @@ final class WordAudioPlayer: ObservableObject {
     @Published private(set) var isPlaying = false
     @Published private(set) var activeKey: String?
     @Published private(set) var playbackRate: Float = 1
+    @Published private(set) var isLooping = false
     let clock = AudioPlaybackClock()
 
     private static let slowRate: Float = 0.75
@@ -54,6 +55,9 @@ final class WordAudioPlayer: ObservableObject {
     private var statusObserver: NSKeyValueObservation?
     private var endObserver: NSObjectProtocol?
     private var timeObserver: Any?
+    private var loopStart: TimeInterval = 0
+    private var loopEnd: TimeInterval?
+    private var isSeekingLoop = false
 
     private init() {
         endObserver = NotificationCenter.default.addObserver(
@@ -62,8 +66,13 @@ final class WordAudioPlayer: ObservableObject {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor in
-                self?.isPlaying = false
-                self?.clock.publish(from: self?.player.currentTime() ?? .zero, item: self?.player.currentItem)
+                guard let self else { return }
+                if self.isLooping {
+                    self.wrapToLoopStart()
+                    return
+                }
+                self.isPlaying = false
+                self.clock.publish(from: self.player.currentTime(), item: self.player.currentItem)
             }
         }
     }
@@ -99,10 +108,11 @@ final class WordAudioPlayer: ObservableObject {
         }
 
         guard let url = AudioFileStore.playbackURL(fileName: fileName, language: language) else { return }
-        play(url: url, cue: cue, key: key)
+        play(url: url, cue: cue, key: key, seekEvenIfZero: true)
     }
 
     func pause() {
+        player.pause()
         player.rate = 0
         isPlaying = false
     }
@@ -117,14 +127,45 @@ final class WordAudioPlayer: ObservableObject {
         isPlaying = false
         activeKey = nil
         playbackRate = 1
+        clearLoop()
         clock.reset()
     }
 
     /// Play the topic file from 0:00 (local if saved, otherwise stream).
     func startShadowing(fileName: String, language: String) {
+        clearLoop()
         let key = "shadow:\(language)\u{1f}\(fileName)"
         guard let url = AudioFileStore.playbackURL(fileName: fileName, language: language) else { return }
         play(url: url, cue: 0, key: key, seekEvenIfZero: true)
+    }
+
+    func toggleLoop(start: TimeInterval, end: TimeInterval?) {
+        if isLooping {
+            clearLoop()
+            applyLoopEndpoint()
+            startObservingTime()
+            return
+        }
+        isLooping = true
+        loopStart = max(0, start)
+        loopEnd = end
+        print("[WordAudioPlayer] loop on \(loopStart) -> \(end.map { String($0) } ?? "nil")")
+        startObservingTime()
+        applyLoopEndpoint()
+        if isPlaying, let end = resolvedLoopEnd() {
+            let now = CMTimeGetSeconds(player.currentTime())
+            if now.isFinite, now > loopStart + 0.25, now >= end {
+                wrapToLoopStart()
+            }
+        }
+    }
+
+    func clearLoop() {
+        isLooping = false
+        loopStart = 0
+        loopEnd = nil
+        isSeekingLoop = false
+        applyLoopEndpoint()
     }
 
     func togglePlayback() {
@@ -180,8 +221,8 @@ final class WordAudioPlayer: ObservableObject {
         activateSession()
 
         let needsNewItem: Bool
-        if let currentURL = (player.currentItem?.asset as? AVURLAsset)?.url {
-            needsNewItem = currentURL != url
+        if let currentURL = currentItemURL() {
+            needsNewItem = currentURL.absoluteString != url.absoluteString
         } else {
             needsNewItem = true
         }
@@ -205,7 +246,6 @@ final class WordAudioPlayer: ObservableObject {
                 }
             }
             activeKey = key
-            // Seek once ready; also try immediately in case already ready.
             if item.status == .readyToPlay {
                 seekAndPlay(cue: cue, key: key, seekEvenIfZero: seekEvenIfZero)
             }
@@ -217,24 +257,47 @@ final class WordAudioPlayer: ObservableObject {
         }
     }
 
+    private func currentItemURL() -> URL? {
+        (player.currentItem?.asset as? AVURLAsset)?.url
+    }
+
     private func seekAndPlay(cue: TimeInterval, key: String, seekEvenIfZero: Bool = false) {
-        if cue <= 0, !seekEvenIfZero {
+        let targetSeconds = max(0, cue)
+        if targetSeconds == 0, !seekEvenIfZero {
             activeKey = key
+            applyLoopEndpoint()
             player.rate = playbackRate
             isPlaying = true
             return
         }
 
-        let time = CMTime(seconds: max(0, cue), preferredTimescale: 600)
+        player.pause()
+        player.currentItem?.forwardPlaybackEndTime = .invalid
+        let time = CMTime(seconds: targetSeconds, preferredTimescale: 600)
         player.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] finished in
             Task { @MainActor in
-                guard let self, finished else { return }
-                self.activeKey = key
-                self.player.rate = self.playbackRate
-                self.isPlaying = true
-                self.clock.publish(from: self.player.currentTime(), item: self.player.currentItem)
+                guard let self else { return }
+                let landed = CMTimeGetSeconds(self.player.currentTime())
+                let offTarget = landed.isFinite && abs(landed - targetSeconds) > 0.25
+                if !finished || offTarget {
+                    self.player.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
+                        Task { @MainActor in
+                            self?.finishSeekAndPlay(key: key)
+                        }
+                    }
+                    return
+                }
+                self.finishSeekAndPlay(key: key)
             }
         }
+    }
+
+    private func finishSeekAndPlay(key: String) {
+        activeKey = key
+        applyLoopEndpoint()
+        player.rate = playbackRate
+        isPlaying = true
+        clock.publish(from: player.currentTime(), item: player.currentItem)
     }
 
     private func startObservingTime() {
@@ -242,10 +305,55 @@ final class WordAudioPlayer: ObservableObject {
             player.removeTimeObserver(timeObserver)
             self.timeObserver = nil
         }
-        let interval = CMTime(seconds: 0.5, preferredTimescale: 600)
+        let seconds = isLooping ? 0.1 : 0.5
+        let interval = CMTime(seconds: seconds, preferredTimescale: 600)
         timeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
-            MainActor.assumeIsolated {
-                self?.clock.publish(from: time, item: self?.player.currentItem)
+            Task { @MainActor in
+                guard let self else { return }
+                self.clock.publish(from: time, item: self.player.currentItem)
+                self.wrapLoopIfNeeded(at: time)
+            }
+        }
+    }
+
+    private func resolvedLoopEnd() -> TimeInterval? {
+        guard let loopEnd, loopEnd > loopStart else { return nil }
+        return loopEnd
+    }
+
+    private func applyLoopEndpoint() {
+        guard let item = player.currentItem else { return }
+        if isLooping, let end = resolvedLoopEnd() {
+            item.forwardPlaybackEndTime = CMTime(seconds: end, preferredTimescale: 600)
+        } else {
+            item.forwardPlaybackEndTime = .invalid
+        }
+    }
+
+    private func wrapLoopIfNeeded(at time: CMTime) {
+        guard isLooping, isPlaying, !isSeekingLoop else { return }
+        let seconds = CMTimeGetSeconds(player.currentTime())
+        guard seconds.isFinite, let end = resolvedLoopEnd() else { return }
+        guard seconds > loopStart + 0.25 else { return }
+        guard seconds >= end else { return }
+        wrapToLoopStart()
+    }
+
+    private func wrapToLoopStart() {
+        guard isLooping, !isSeekingLoop else { return }
+        isSeekingLoop = true
+        player.currentItem?.forwardPlaybackEndTime = .invalid
+        let time = CMTime(seconds: loopStart, preferredTimescale: 600)
+        print("[WordAudioPlayer] wrap to \(loopStart)")
+        player.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] finished in
+            Task { @MainActor in
+                guard let self else { return }
+                self.isSeekingLoop = false
+                guard finished, self.isLooping else { return }
+                self.applyLoopEndpoint()
+                self.player.rate = self.playbackRate
+                self.isPlaying = true
+                self.clock.publish(from: self.player.currentTime(), item: self.player.currentItem)
             }
         }
     }
