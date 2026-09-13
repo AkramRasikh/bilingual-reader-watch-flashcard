@@ -38,24 +38,21 @@ struct ReviewableSentence: Identifiable, Hashable, Codable {
 
     var audioCue: TimeInterval { time ?? 0 }
 
-    /// Loop window: start is the cue, or 0.5s earlier when this line is 2s or shorter.
-    /// When the start is pulled back, the end is pushed forward by the same amount
-    /// so the original sentence still plays in full.
+    /// Loop window: start is the sentence cue, or 0.5s earlier when the line is 2s or shorter.
+    /// End is the next sentence’s time (or the file end for the last line).
     func loopWindow(fileDuration: TimeInterval?) -> (start: TimeInterval, end: TimeInterval?) {
         let cue = audioCue
         let hasNeighbor = !nextTargetLang.isEmpty || !nextBaseLang.isEmpty
-        let rawEnd: TimeInterval?
+        let end: TimeInterval?
         if let nextTime, nextTime > cue + 0.05 {
-            rawEnd = nextTime
+            end = nextTime
         } else if !hasNeighbor, let fileDuration, fileDuration > cue + 0.05 {
-            rawEnd = fileDuration
+            end = fileDuration
         } else {
-            rawEnd = nil
+            end = nil
         }
-        let span = (rawEnd ?? .infinity) - cue
-        let pad: TimeInterval = span <= 2 ? 0.5 : 0
-        let start = max(0, cue - pad)
-        let end = rawEnd.map { min($0 + pad, fileDuration ?? $0 + pad) }
+        let span = (end ?? .infinity) - cue
+        let start = span <= 2 ? max(0, cue - 0.5) : cue
         return (start, end)
     }
 
