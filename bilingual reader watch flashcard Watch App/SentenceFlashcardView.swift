@@ -113,7 +113,7 @@ struct SentenceFlashcardView: View {
 
     var body: some View {
         VStack(spacing: 4) {
-            HStack(alignment: .top, spacing: 4) {
+            HStack(alignment: .top, spacing: 10) {
                 Button(action: onBack) {
                     HStack(spacing: 3) {
                         Image(systemName: "chevron.left")
@@ -121,17 +121,17 @@ struct SentenceFlashcardView: View {
                         Text("\(remainingDue)/\(max(totalInReview, remainingDue))")
                             .font(.system(size: 9, weight: .semibold))
                             .monospacedDigit()
-                        Spacer(minLength: 0)
                     }
                     .padding(.top, 6)
+                    .frame(minWidth: 40, minHeight: 32, alignment: .leading)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: true, vertical: false)
                 .accessibilityLabel("Back, \(remainingDue) of \(max(totalInReview, remainingDue)) sentences due")
 
                 if sentence.canPlayAudio {
-                    HStack(alignment: .top, spacing: 8) {
+                    HStack(alignment: .top, spacing: 12) {
                         Button {
                             let window = sentenceLoopWindow
                             print("[sentence loop] cue=\(sentence.audioCue) next=\(sentence.nextTime as Any) window=\(window.start)->\(window.end as Any)")
@@ -139,7 +139,7 @@ struct SentenceFlashcardView: View {
                         } label: {
                             Image(systemName: "repeat")
                                 .font(.system(size: 11, weight: .semibold))
-                                .frame(width: 22, height: 26)
+                                .frame(width: 28, height: 32)
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
@@ -154,7 +154,7 @@ struct SentenceFlashcardView: View {
                                 .font(.system(size: 11, weight: .semibold))
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.7)
-                                .frame(width: 34, height: 26)
+                                .frame(minWidth: 36, minHeight: 32)
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
@@ -175,15 +175,18 @@ struct SentenceFlashcardView: View {
                             }
                         } label: {
                             Image(systemName: isAudioPlaying ? "stop.fill" : "play.fill")
-                                .font(.system(size: 16, weight: .bold))
+                                .font(.system(size: 18, weight: .bold))
                                 .foregroundStyle(isLocalAudio ? Color.green : Color.primary)
-                                .frame(width: 36, height: 32)
+                                .frame(minWidth: 48, maxWidth: .infinity, minHeight: 36, alignment: .trailing)
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel(isAudioPlaying ? "Stop" : "Play")
                         .accessibilityHint(isLocalAudio ? "Saved audio" : "Streaming audio")
                     }
+                    .frame(maxWidth: .infinity)
+                } else {
+                    Spacer(minLength: 0)
                 }
             }
             .zIndex(10)
@@ -228,20 +231,28 @@ struct SentenceFlashcardView: View {
                         }
                     }
                 } else {
-                    Button {
-                        Task { await submitRemoveReview() }
-                    } label: {
-                        Image(systemName: "trash.fill")
-                            .font(.system(size: 14).weight(.semibold))
-                            .foregroundStyle(Color(red: 0.85, green: 0.65, blue: 0.13))
-                            .frame(maxWidth: .infinity)
+                    ZStack {
+                        Button {} label: {
+                            Image(systemName: "trash.fill")
+                                .font(.system(size: 14).weight(.semibold))
+                                .foregroundStyle(Color(red: 0.85, green: 0.65, blue: 0.13))
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(Color(red: 0.85, green: 0.65, blue: 0.13))
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .gesture(trashPageGesture)
+                            .accessibilityLabel("Remove from review")
+                            .accessibilityAddTraits(.isButton)
                     }
-                    .buttonStyle(.bordered)
-                    .tint(Color(red: 0.85, green: 0.65, blue: 0.13))
-                    .disabled(isSubmitting)
                 }
             }
             .frame(height: 36)
+            .contentShape(Rectangle())
             .gesture(actionsSwipeGesture)
             .background(.background)
             .opacity(isSubmitting ? 0.45 : 1)
@@ -295,6 +306,22 @@ struct SentenceFlashcardView: View {
                 } else if horizontal > 0 {
                     actionsPage = 0
                 }
+            }
+    }
+
+    private var trashPageGesture: some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onEnded { value in
+                let horizontal = value.translation.width
+                let vertical = value.translation.height
+                if abs(horizontal) > 20, abs(horizontal) > abs(vertical) {
+                    if horizontal > 0 {
+                        actionsPage = 0
+                    }
+                    return
+                }
+                guard hypot(horizontal, vertical) < 12, !isSubmitting else { return }
+                Task { await submitRemoveReview() }
             }
     }
 

@@ -150,20 +150,28 @@ struct FlashcardView: View {
                         }
                     }
                 } else {
-                    Button {
-                        Task { await submitDelete() }
-                    } label: {
-                        Image(systemName: "trash.fill")
-                            .font(.system(size: 14).weight(.semibold))
-                            .foregroundStyle(Color(red: 0.85, green: 0.65, blue: 0.13))
-                            .frame(maxWidth: .infinity)
+                    ZStack {
+                        Button {} label: {
+                            Image(systemName: "trash.fill")
+                                .font(.system(size: 14).weight(.semibold))
+                                .foregroundStyle(Color(red: 0.85, green: 0.65, blue: 0.13))
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(Color(red: 0.85, green: 0.65, blue: 0.13))
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .gesture(trashPageGesture)
+                            .accessibilityLabel("Delete")
+                            .accessibilityAddTraits(.isButton)
                     }
-                    .buttonStyle(.bordered)
-                    .tint(Color(red: 0.85, green: 0.65, blue: 0.13))
-                    .disabled(isSubmitting)
                 }
             }
             .frame(height: 36)
+            .contentShape(Rectangle())
             .gesture(actionsSwipeGesture)
             .background(.background)
             .opacity(isSubmitting ? 0.45 : 1)
@@ -236,6 +244,22 @@ struct FlashcardView: View {
                 } else if horizontal > 0 {
                     actionsPage = 0
                 }
+            }
+    }
+
+    private var trashPageGesture: some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onEnded { value in
+                let horizontal = value.translation.width
+                let vertical = value.translation.height
+                if abs(horizontal) > 20, abs(horizontal) > abs(vertical) {
+                    if horizontal > 0 {
+                        actionsPage = 0
+                    }
+                    return
+                }
+                guard hypot(horizontal, vertical) < 12, !isSubmitting else { return }
+                Task { await submitDelete() }
             }
     }
 
