@@ -162,27 +162,11 @@ struct SentenceFlashcardView: View {
                         .accessibilityLabel(audioPlayer.playbackRate < 1 ? "Normal speed" : "Slow to 0.75")
                         .accessibilityAddTraits(audioPlayer.playbackRate < 1 ? .isSelected : [])
 
-                        Button {
-                            guard let fileName = sentence.audioFileName else { return }
-                            if isAudioPlaying {
-                                audioPlayer.pause()
-                            } else {
-                                audioPlayer.toggle(
-                                    fileName: fileName,
-                                    language: language,
-                                    cue: audioPlayer.isLooping ? sentenceLoopWindow.start : sentence.audioCue
-                                )
-                            }
-                        } label: {
-                            Image(systemName: isAudioPlaying ? "stop.fill" : "play.fill")
-                                .font(.system(size: 18, weight: .bold))
-                                .foregroundStyle(isLocalAudio ? Color.green : Color.primary)
-                                .frame(minWidth: 48, maxWidth: .infinity, minHeight: 36, alignment: .trailing)
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(isAudioPlaying ? "Stop" : "Play")
-                        .accessibilityHint(isLocalAudio ? "Saved audio" : "Streaming audio")
+                        Image(systemName: isAudioPlaying ? "stop.fill" : "play.fill")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(isLocalAudio ? Color.green : Color.primary)
+                            .frame(width: 22, height: 26, alignment: .trailing)
+                            .accessibilityHidden(true)
                     }
                     .frame(maxWidth: .infinity)
                 } else {
@@ -193,18 +177,37 @@ struct SentenceFlashcardView: View {
             .background(.background)
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            sentenceBody
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .padding(.horizontal, 4)
-                .contentShape(Rectangle())
-                .gesture(languageSwipeGesture)
-                .onLongPressGesture {
-                    expandedText = SentenceExpandedText(
-                        title: revealedFace.title,
-                        body: expandedBody
-                    )
+            GeometryReader { geo in
+                ZStack(alignment: .topTrailing) {
+                    sentenceBody
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                        .padding(.horizontal, 4)
+                        .contentShape(Rectangle())
+                        .gesture(languageSwipeGesture)
+                        .onLongPressGesture {
+                            expandedText = SentenceExpandedText(
+                                title: revealedFace.title,
+                                body: expandedBody
+                            )
+                        }
+
+                    if sentence.canPlayAudio {
+                        Color.clear
+                            .frame(width: geo.size.width * 0.25)
+                            .frame(maxHeight: .infinity)
+                            .overlay(alignment: .leading) {
+                                PlaybackEdgeGuide()
+                            }
+                            .contentShape(Rectangle())
+                            .gesture(playbackEdgeGesture)
+                            .accessibilityLabel(isAudioPlaying ? "Stop" : "Play")
+                            .accessibilityHint(isLocalAudio ? "Saved audio" : "Streaming audio")
+                            .accessibilityAddTraits(.isButton)
+                    }
                 }
-                .opacity(isSubmitting ? 0.45 : 1)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .opacity(isSubmitting ? 0.45 : 1)
 
             if let errorMessage {
                 Text(errorMessage)
@@ -285,14 +288,45 @@ struct SentenceFlashcardView: View {
             .onEnded { value in
                 let horizontal = value.translation.width
                 guard abs(horizontal) > abs(value.translation.height) else { return }
-                withAnimation(.easeInOut(duration: 0.15)) {
-                    if horizontal < 0 {
-                        revealedFace = revealedFace.swipingLeft
-                    } else {
-                        revealedFace = revealedFace.swipingRight
-                    }
-                }
+                applyLanguageSwipe(horizontal)
             }
+    }
+
+    private var playbackEdgeGesture: some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onEnded { value in
+                let horizontal = value.translation.width
+                let vertical = value.translation.height
+                if abs(horizontal) > 20, abs(horizontal) > abs(vertical) {
+                    applyLanguageSwipe(horizontal)
+                    return
+                }
+                guard hypot(horizontal, vertical) < 12, !isSubmitting else { return }
+                toggleSentencePlayback()
+            }
+    }
+
+    private func applyLanguageSwipe(_ horizontal: CGFloat) {
+        withAnimation(.easeInOut(duration: 0.15)) {
+            if horizontal < 0 {
+                revealedFace = revealedFace.swipingLeft
+            } else {
+                revealedFace = revealedFace.swipingRight
+            }
+        }
+    }
+
+    private func toggleSentencePlayback() {
+        guard let fileName = sentence.audioFileName else { return }
+        if isAudioPlaying {
+            audioPlayer.pause()
+        } else {
+            audioPlayer.toggle(
+                fileName: fileName,
+                language: language,
+                cue: audioPlayer.isLooping ? sentenceLoopWindow.start : sentence.audioCue
+            )
+        }
     }
 
     private var actionsSwipeGesture: some Gesture {
@@ -401,6 +435,24 @@ struct SentenceFlashcardView: View {
             print("[sentence SRS] remove review failed: \(error)")
             errorMessage = "Remove failed"
         }
+    }
+}
+
+private struct PlaybackEdgeGuide: View {
+    var body: some View {
+        GeometryReader { geo in
+            Path { path in
+                path.move(to: CGPoint(x: 0.5, y: 0))
+                path.addLine(to: CGPoint(x: 0.5, y: geo.size.height))
+            }
+            .stroke(
+                Color.white.opacity(0.16),
+                style: StrokeStyle(lineWidth: 0.6, dash: [2, 4])
+            )
+        }
+        .frame(width: 1)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
 

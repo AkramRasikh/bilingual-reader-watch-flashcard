@@ -58,6 +58,9 @@ final class WordAudioPlayer: ObservableObject {
     private var loopStart: TimeInterval = 0
     private var loopEnd: TimeInterval?
     private var isSeekingLoop = false
+    private var seekGeneration = 0
+    private var currentPlaybackURL: URL?
+    private var pendingSeek: (cue: TimeInterval, key: String, seekEvenIfZero: Bool)?
 
     private init() {
         endObserver = NotificationCenter.default.addObserver(
@@ -68,8 +71,7 @@ final class WordAudioPlayer: ObservableObject {
             Task { @MainActor in
                 guard let self else { return }
                 if self.isLooping {
-                    self.isSeekingLoop = false
-                    self.seekAndPlay(cue: self.loopStart, key: self.activeKey ?? "", seekEvenIfZero: true)
+                    self.replayFromCue(self.loopStart)
                     return
                 }
                 self.isPlaying = false
@@ -127,6 +129,7 @@ final class WordAudioPlayer: ObservableObject {
         player.replaceCurrentItem(with: nil)
         isPlaying = false
         activeKey = nil
+        currentPlaybackURL = nil
         playbackRate = 1
         clearLoop()
         clock.reset()
@@ -143,7 +146,6 @@ final class WordAudioPlayer: ObservableObject {
     func toggleLoop(start: TimeInterval, end: TimeInterval?) {
         if isLooping {
             clearLoop()
-            startObservingTime()
             return
         }
         isLooping = true
@@ -152,7 +154,6 @@ final class WordAudioPlayer: ObservableObject {
         isSeekingLoop = false
         print("[WordAudioPlayer] loop on \(loopStart) -> \(loopEnd.map { String($0) } ?? "nil")")
         startObservingTime()
-        wrapLoopIfNeeded()
     }
 
     func clearLoop() {
@@ -160,7 +161,8 @@ final class WordAudioPlayer: ObservableObject {
         loopStart = 0
         loopEnd = nil
         isSeekingLoop = false
-        player.currentItem?.forwardPlaybackEndTime = .invalid
+        pendingSeek = nil
+        seekGeneration += 1
     }
 
     func togglePlayback() {
@@ -214,46 +216,42 @@ final class WordAudioPlayer: ObservableObject {
 
     private func play(url: URL, cue: TimeInterval, key: String, seekEvenIfZero: Bool = false) {
         activateSession()
+        currentPlaybackURL = url
+        print("[WordAudioPlayer] play cue=\(cue)")
 
-        let needsNewItem: Bool
-        if let currentURL = currentItemURL() {
-            needsNewItem = currentURL.absoluteString != url.absoluteString
-        } else {
-            needsNewItem = true
-        }
-
-        if needsNewItem {
-            let item = AVPlayerItem(url: url)
-            player.replaceCurrentItem(with: item)
-            player.automaticallyWaitsToMinimizeStalling = !url.isFileURL
-            startObservingTime()
-            statusObserver?.invalidate()
-            statusObserver = item.observe(\.status, options: [.new]) { [weak self] item, _ in
-                Task { @MainActor in
-                    guard let self else { return }
-                    if item.status == .readyToPlay {
-                        self.seekAndPlay(cue: cue, key: key, seekEvenIfZero: seekEvenIfZero)
-                    } else if item.status == .failed {
-                        print("[WordAudioPlayer] failed: \(item.error?.localizedDescription ?? "?")")
-                        self.isPlaying = false
-                        self.activeKey = nil
-                    }
+        // Always load a fresh item. Seeking a paused MP3 in place on Watch often
+        // snaps several seconds earlier than the cue; the first play was accurate
+        // because it started from a new item.
+        let item = AVPlayerItem(url: url)
+        player.replaceCurrentItem(with: item)
+        player.automaticallyWaitsToMinimizeStalling = !url.isFileURL
+        pendingSeek = (cue, key, seekEvenIfZero)
+        startObservingTime()
+        statusObserver?.invalidate()
+        statusObserver = item.observe(\.status, options: [.new]) { [weak self] item, _ in
+            Task { @MainActor in
+                guard let self else { return }
+                if item.status == .readyToPlay {
+                    self.performPendingSeek()
+                } else if item.status == .failed {
+                    print("[WordAudioPlayer] failed: \(item.error?.localizedDescription ?? "?")")
+                    self.isPlaying = false
+                    self.activeKey = nil
+                    self.isSeekingLoop = false
+                    self.pendingSeek = nil
                 }
             }
-            activeKey = key
-            if item.status == .readyToPlay {
-                seekAndPlay(cue: cue, key: key, seekEvenIfZero: seekEvenIfZero)
-            }
-        } else {
-            if timeObserver == nil {
-                startObservingTime()
-            }
-            seekAndPlay(cue: cue, key: key, seekEvenIfZero: seekEvenIfZero)
+        }
+        activeKey = key
+        if item.status == .readyToPlay {
+            performPendingSeek()
         }
     }
 
-    private func currentItemURL() -> URL? {
-        (player.currentItem?.asset as? AVURLAsset)?.url
+    private func performPendingSeek() {
+        guard let pending = pendingSeek else { return }
+        pendingSeek = nil
+        seekAndPlay(cue: pending.cue, key: pending.key, seekEvenIfZero: pending.seekEvenIfZero)
     }
 
     private func seekAndPlay(cue: TimeInterval, key: String, seekEvenIfZero: Bool = false) {
@@ -265,18 +263,22 @@ final class WordAudioPlayer: ObservableObject {
             return
         }
 
+        seekGeneration += 1
+        let generation = seekGeneration
         player.pause()
         player.currentItem?.forwardPlaybackEndTime = .invalid
         let time = CMTime(seconds: targetSeconds, preferredTimescale: 600)
         player.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] finished in
             Task { @MainActor in
-                guard let self else { return }
+                guard let self, generation == self.seekGeneration else { return }
                 let landed = CMTimeGetSeconds(self.player.currentTime())
                 let offTarget = landed.isFinite && abs(landed - targetSeconds) > 0.25
                 if !finished || offTarget {
+                    print("[WordAudioPlayer] seek retry cue=\(targetSeconds) landed=\(landed)")
                     self.player.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
                         Task { @MainActor in
-                            self?.finishSeekAndPlay(key: key)
+                            guard let self, generation == self.seekGeneration else { return }
+                            self.finishSeekAndPlay(key: key)
                         }
                     }
                     return
@@ -315,9 +317,22 @@ final class WordAudioPlayer: ObservableObject {
         guard let end = loopEnd, end > loopStart else { return }
         let seconds = CMTimeGetSeconds(player.currentTime())
         guard seconds.isFinite, seconds >= end else { return }
+        let duration = player.currentItem.map { CMTimeGetSeconds($0.duration) } ?? .nan
+        if duration.isFinite, duration > end + 1, seconds >= duration - 0.35 {
+            return
+        }
         print("[WordAudioPlayer] loop wrap at \(seconds) -> \(loopStart)")
+        replayFromCue(loopStart)
+    }
+
+    private func replayFromCue(_ cue: TimeInterval) {
+        guard !isSeekingLoop else { return }
         isSeekingLoop = true
-        seekAndPlay(cue: loopStart, key: activeKey ?? "", seekEvenIfZero: true)
+        if let url = currentPlaybackURL {
+            play(url: url, cue: cue, key: activeKey ?? "", seekEvenIfZero: true)
+        } else {
+            seekAndPlay(cue: cue, key: activeKey ?? "", seekEvenIfZero: true)
+        }
     }
 
     private func activateSession() {
