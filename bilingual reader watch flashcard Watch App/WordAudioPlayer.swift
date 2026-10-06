@@ -148,6 +148,11 @@ final class WordAudioPlayer: ObservableObject {
             clearLoop()
             return
         }
+        enableLoop(start: start, end: end)
+    }
+
+    /// Keep playback inside `[start, end)` and restart at `start` when it crosses `end`.
+    func enableLoop(start: TimeInterval, end: TimeInterval?) {
         isLooping = true
         loopStart = max(0, start)
         loopEnd = end
@@ -196,10 +201,10 @@ final class WordAudioPlayer: ObservableObject {
 
         var duration = CMTimeGetSeconds(item.duration)
         if !duration.isFinite || duration < 0 {
-            duration = .greatestFiniteMagnitude
+            duration = .greatestFiniteMagnitude 
         }
         let target = min(max(0, current + seconds), duration)
-        let time = CMTime(seconds: target, preferredTimescale: 600)
+        let time = CMTime(seconds : target, preferredTimescale: 600)
         let shouldResume = isPlaying
         let slack = CMTime(seconds: 0.15, preferredTimescale: 600)
         player.seek(to: time, toleranceBefore: slack, toleranceAfter: slack) { [weak self] finished in
@@ -258,34 +263,61 @@ final class WordAudioPlayer: ObservableObject {
         let targetSeconds = max(0, cue)
         if targetSeconds == 0, !seekEvenIfZero {
             activeKey = key
+            applyLoopEnd()
             player.rate = playbackRate
             isPlaying = true
             return
         }
+        seekPrecisely(to: targetSeconds, key: key)
+    }
 
+    /// AVPlayer often finishes an MP3 seek early or late of the requested time.
+    /// Measure where it landed and aim by the opposite error until it matches.
+    private func seekPrecisely(
+        to target: TimeInterval,
+        key: String,
+        attempt: Int = 0,
+        aim: TimeInterval? = nil
+    ) {
+        let targetSeconds = max(0, target)
+        let aimSeconds = max(0, aim ?? targetSeconds)
         seekGeneration += 1
         let generation = seekGeneration
+        isSeekingLoop = true
         player.pause()
         player.currentItem?.forwardPlaybackEndTime = .invalid
-        let time = CMTime(seconds: targetSeconds, preferredTimescale: 600)
-        player.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] finished in
+        let time = CMTime(seconds: aimSeconds, preferredTimescale: 600)
+        // Snap backward rather than past the cue. A late landing skips the
+        // start of a contracted snippet while the end boundary still holds.
+        let toleranceBefore = CMTime(seconds: 0.6, preferredTimescale: 600)
+        player.seek(to: time, toleranceBefore: toleranceBefore, toleranceAfter: .zero) { [weak self] finished in
             Task { @MainActor in
                 guard let self, generation == self.seekGeneration else { return }
                 let landed = CMTimeGetSeconds(self.player.currentTime())
-                let offTarget = landed.isFinite && abs(landed - targetSeconds) > 0.25
-                if !finished || offTarget {
-                    print("[WordAudioPlayer] seek retry cue=\(targetSeconds) landed=\(landed)")
-                    self.player.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
-                        Task { @MainActor in
-                            guard let self, generation == self.seekGeneration else { return }
-                            self.finishSeekAndPlay(key: key)
-                        }
+                let error = landed.isFinite ? landed - targetSeconds : 1
+                let closeEnough = error <= 0.05 && error >= -0.6
+                if finished, closeEnough || attempt >= 3 {
+                    if !closeEnough {
+                        print("[WordAudioPlayer] seek landed \(landed) target \(targetSeconds)")
                     }
+                    self.applyLoopEnd()
+                    self.finishSeekAndPlay(key: key)
                     return
                 }
-                self.finishSeekAndPlay(key: key)
+                let nextAim = max(0, aimSeconds - error)
+                print("[WordAudioPlayer] seek adjust target=\(targetSeconds) landed=\(landed) next=\(nextAim)")
+                self.seekPrecisely(to: targetSeconds, key: key, attempt: attempt + 1, aim: nextAim)
             }
         }
+    }
+
+    /// Stop at the loop end the way the web sets `currentTime` back at the boundary.
+    private func applyLoopEnd() {
+        guard isLooping, let end = loopEnd, end > loopStart else {
+            player.currentItem?.forwardPlaybackEndTime = .invalid
+            return
+        }
+        player.currentItem?.forwardPlaybackEndTime = CMTime(seconds: end, preferredTimescale: 600)
     }
 
     private func finishSeekAndPlay(key: String) {
@@ -316,9 +348,12 @@ final class WordAudioPlayer: ObservableObject {
         guard isLooping, isPlaying, !isSeekingLoop else { return }
         guard let end = loopEnd, end > loopStart else { return }
         let seconds = CMTimeGetSeconds(player.currentTime())
-        guard seconds.isFinite, seconds >= end else { return }
+        guard seconds.isFinite else { return }
+        let beforeStart = seconds < loopStart - 0.7
+        let afterEnd = seconds >= end
+        guard beforeStart || afterEnd else { return }
         let duration = player.currentItem.map { CMTimeGetSeconds($0.duration) } ?? .nan
-        if duration.isFinite, duration > end + 1, seconds >= duration - 0.35 {
+        if afterEnd, duration.isFinite, duration > end + 1, seconds >= duration - 0.35 {
             return
         }
         print("[WordAudioPlayer] loop wrap at \(seconds) -> \(loopStart)")
@@ -328,11 +363,15 @@ final class WordAudioPlayer: ObservableObject {
     private func replayFromCue(_ cue: TimeInterval) {
         guard !isSeekingLoop else { return }
         isSeekingLoop = true
-        if let url = currentPlaybackURL {
-            play(url: url, cue: cue, key: activeKey ?? "", seekEvenIfZero: true)
-        } else {
-            seekAndPlay(cue: cue, key: activeKey ?? "", seekEvenIfZero: true)
+        if player.currentItem != nil {
+            seekPrecisely(to: cue, key: activeKey ?? "")
+            return
         }
+        guard let url = currentPlaybackURL else {
+            isSeekingLoop = false
+            return
+        }
+        play(url: url, cue: cue, key: activeKey ?? "", seekEvenIfZero: true)
     }
 
     private func activateSession() {

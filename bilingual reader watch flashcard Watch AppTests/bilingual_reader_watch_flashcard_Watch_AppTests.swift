@@ -26,6 +26,72 @@ final class bilingual_reader_watch_flashcard_Watch_AppTests: XCTestCase {
         // Tests marked async will run the test method on an arbitrary thread managed by the Swift runtime.
     }
 
+    func testSnippetFocusExactMatchFadesOutsideSpan() {
+        let focus = SnippetFocus(
+            fullText: "hello world again",
+            query: "world",
+            trimmed: false,
+            startOffset: 0,
+            lengthAdjustment: 0
+        )
+        XCTAssertEqual(focus.matchStart, 6)
+        XCTAssertEqual(focus.matchEnd, 11)
+        XCTAssertEqual(focus.textMatch, "world")
+        XCTAssertFalse(focus.hasChanged)
+    }
+
+    func testSnippetFocusTrimmedLanguageStepsOneCharacter() {
+        var focus = SnippetFocus(
+            fullText: "你好世界",
+            query: "好世",
+            trimmed: true,
+            startOffset: 0,
+            lengthAdjustment: 0
+        )
+        XCTAssertEqual(focus.textMatch, "好世")
+        focus.moveLeft()
+        XCTAssertEqual(focus.textMatch, "你好")
+        focus.moveRight()
+        focus.moveRight()
+        XCTAssertEqual(focus.textMatch, "世界")
+        focus.expand()
+        XCTAssertEqual(focus.textMatch, "世界")
+        XCTAssertEqual(focus.matchEnd, 4)
+    }
+
+    func testSnippetFocusWordStepAndReset() {
+        var focus = SnippetFocus(
+            fullText: "hello world again",
+            query: "world",
+            trimmed: false,
+            startOffset: 0,
+            lengthAdjustment: 0
+        )
+        focus.moveLeft()
+        XCTAssertEqual(focus.textMatch, "hello")
+        focus.reset()
+        focus.expand()
+        XCTAssertEqual(focus.textMatch, "world again")
+        focus.reset()
+        XCTAssertEqual(focus.textMatch, "world")
+        XCTAssertFalse(focus.hasChanged)
+    }
+
+    func testSnippetFocusWithoutMatchShowsFullText() {
+        let focus = SnippetFocus(
+            fullText: "bonjour",
+            query: "",
+            trimmed: false,
+            startOffset: 0,
+            lengthAdjustment: 0
+        )
+        XCTAssertFalse(focus.canAdjust)
+        XCTAssertEqual(focus.textMatch, "bonjour")
+        var moved = focus
+        moved.moveLeft()
+        XCTAssertEqual(moved.textMatch, "bonjour")
+    }
+
     func testPerformanceExample() throws {
         // This is an example of a performance test case.
         self.measure {

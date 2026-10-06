@@ -8,6 +8,9 @@ enum GeneratedEnv {
     static let updateWordURL = URL(string: "https://updateword-tgkwkmn5na-uc.a.run.app")!
     static let deleteWordURL = URL(string: "https://deleteword-tgkwkmn5na-uc.a.run.app")!
     static let addImprovWordURL = URL(string: "https://addimprovword-tgkwkmn5na-uc.a.run.app")!
+    static let addWordURL = URL(string: "https://addword-tgkwkmn5na-uc.a.run.app")!
     static let updateSentenceURL = URL(string: "https://updatesentence-tgkwkmn5na-uc.a.run.app")!
+    static let saveSnippetURL = URL(string: "https://savesnippet-tgkwkmn5na-uc.a.run.app")!
+    static let deleteSnippetURL = URL(string: "https://deletesnippet-tgkwkmn5na-uc.a.run.app")!
     static let cloudflareAssetsURL = URL(string: "https://my-bilingual-reader.uk/")!
 }

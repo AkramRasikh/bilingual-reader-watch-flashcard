@@ -35,6 +35,10 @@
 		2267AE4F300C1AE900D62DAB /* ReviewableSentence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE4E300C1AE900D62DAB /* ReviewableSentence.swift */; };
 		2267AE51300C1AE900D62DAB /* SentenceFlashcardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE50300C1AE900D62DAB /* SentenceFlashcardView.swift */; };
 		2267AE53300C1AE900D62DAB /* SentenceReviewSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE52300C1AE900D62DAB /* SentenceReviewSessionView.swift */; };
+		2267AE55300C1AE900D62DAB /* ReviewableSnippet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE54300C1AE900D62DAB /* ReviewableSnippet.swift */; };
+		2267AE57300C1AE900D62DAB /* SnippetFocus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE56300C1AE900D62DAB /* SnippetFocus.swift */; };
+		2267AE59300C1AE900D62DAB /* SnippetFlashcardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE58300C1AE900D62DAB /* SnippetFlashcardView.swift */; };
+		2267AE5B300C1AE900D62DAB /* SnippetReviewSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE5A300C1AE900D62DAB /* SnippetReviewSessionView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -107,6 +111,10 @@
 		2267AE4E300C1AE900D62DAB /* ReviewableSentence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewableSentence.swift; sourceTree = "<group>"; };
 		2267AE50300C1AE900D62DAB /* SentenceFlashcardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SentenceFlashcardView.swift; sourceTree = "<group>"; };
 		2267AE52300C1AE900D62DAB /* SentenceReviewSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SentenceReviewSessionView.swift; sourceTree = "<group>"; };
+		2267AE54300C1AE900D62DAB /* ReviewableSnippet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewableSnippet.swift; sourceTree = "<group>"; };
+		2267AE56300C1AE900D62DAB /* SnippetFocus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetFocus.swift; sourceTree = "<group>"; };
+		2267AE58300C1AE900D62DAB /* SnippetFlashcardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetFlashcardView.swift; sourceTree = "<group>"; };
+		2267AE5A300C1AE900D62DAB /* SnippetReviewSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetReviewSessionView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -171,6 +179,10 @@
 				2267AE4E300C1AE900D62DAB /* ReviewableSentence.swift */,
 				2267AE50300C1AE900D62DAB /* SentenceFlashcardView.swift */,
 				2267AE52300C1AE900D62DAB /* SentenceReviewSessionView.swift */,
+				2267AE54300C1AE900D62DAB /* ReviewableSnippet.swift */,
+				2267AE56300C1AE900D62DAB /* SnippetFocus.swift */,
+				2267AE58300C1AE900D62DAB /* SnippetFlashcardView.swift */,
+				2267AE5A300C1AE900D62DAB /* SnippetReviewSessionView.swift */,
 				2267AE35300C1AE900D62DAB /* GeneratedEnv.swift */,
 				2267AE38300C1AE900D62DAB /* LocalWordStore.swift */,
 				2267AE3E300C1AE900D62DAB /* LanguageBundle.swift */,
@@ -423,6 +435,10 @@
 				2267AE4F300C1AE900D62DAB /* ReviewableSentence.swift in Sources */,
 				2267AE51300C1AE900D62DAB /* SentenceFlashcardView.swift in Sources */,
 				2267AE53300C1AE900D62DAB /* SentenceReviewSessionView.swift in Sources */,
+				2267AE55300C1AE900D62DAB /* ReviewableSnippet.swift in Sources */,
+				2267AE57300C1AE900D62DAB /* SnippetFocus.swift in Sources */,
+				2267AE59300C1AE900D62DAB /* SnippetFlashcardView.swift in Sources */,
+				2267AE5B300C1AE900D62DAB /* SnippetReviewSessionView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

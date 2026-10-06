@@ -14,13 +14,14 @@ struct LanguageTopicsView: View {
     var onSelectImprov: () -> Void = {}
     var onSelectReview: (_ contentId: String?) -> Void = { _ in }
     var onSelectSentenceReview: (_ contentId: String) -> Void = { _ in }
+    var onSelectSnippetReview: (_ contentId: String) -> Void = { _ in }
     var onSelectShadowing: (_ contentId: String) -> Void = { _ in }
 
     private var displayName: String {
         language.prefix(1).uppercased() + language.dropFirst()
     }
 
-    private var topicsByDueCount: [(topic: ContentTopic, words: (due: Int, total: Int), sentences: (due: Int, total: Int))] {
+    private var topicsByDueCount: [(topic: ContentTopic, words: (due: Int, total: Int), sentences: (due: Int, total: Int), snippets: (due: Int, total: Int))] {
         _ = dueClock
         return bundle.topicsByDueCount
     }
@@ -77,8 +78,10 @@ struct LanguageTopicsView: View {
                                 topic: row.topic,
                                 words: row.words,
                                 sentences: row.sentences,
+                                snippets: row.snippets,
                                 onWords: { onSelectReview(row.topic.id) },
                                 onSentences: { onSelectSentenceReview(row.topic.id) },
+                                onSnippets: { onSelectSnippetReview(row.topic.id) },
                                 onShadowing: { onSelectShadowing(row.topic.id) }
                             )
                         }
@@ -116,8 +119,10 @@ private struct ContentTopicRow: View {
     let topic: ContentTopic
     let words: (due: Int, total: Int)
     let sentences: (due: Int, total: Int)
+    let snippets: (due: Int, total: Int)
     var onWords: () -> Void
     var onSentences: () -> Void
+    var onSnippets: () -> Void
     var onShadowing: () -> Void
 
     @ObservedObject private var library = AudioLibrary.shared
@@ -146,44 +151,55 @@ private struct ContentTopicRow: View {
                     .lineLimit(2)
             }
 
-            HStack(spacing: 3) {
-                studyButton(
-                    label: "W",
-                    due: words.due,
-                    total: words.total,
-                    name: "Words",
-                    action: onWords
-                )
-                studyButton(
-                    label: "S",
-                    due: sentences.due,
-                    total: sentences.total,
-                    name: "Sentences",
-                    action: onSentences
-                )
-                Button(action: onShadowing) {
-                    Text("👻")
-                        .font(.system(size: 11))
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 3) {
+                    studyButton(
+                        label: "W",
+                        due: words.due,
+                        total: words.total,
+                        name: "Words",
+                        action: onWords
+                    )
+                    studyButton(
+                        label: "S",
+                        due: sentences.due,
+                        total: sentences.total,
+                        name: "Sentences",
+                        action: onSentences
+                    )
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.mini)
-                .accessibilityLabel("Shadowing")
+                HStack(spacing: 3) {
+                    studyButton(
+                        label: "✂",
+                        due: snippets.due,
+                        total: snippets.total,
+                        name: "Snippets",
+                        action: onSnippets
+                    )
+                    Button(action: onShadowing) {
+                        Text("👻")
+                            .font(.system(size: 11))
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.mini)
+                    .accessibilityLabel("Shadowing")
 
-                if download.isDownloading {
-                    downloadProgress
-                } else if !isSaved {
-                    Image(systemName: "arrow.down.circle")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(download.errorMessage == nil ? Color.secondary : Color.red)
-                        .frame(width: 22, height: 22)
-                        .contentShape(Rectangle())
-                        .onTapGesture(count: 2) {
-                            Task {
-                                await download.start(language: language, fileName: topic.title)
+                    if download.isDownloading {
+                        downloadProgress
+                    } else if !isSaved {
+                        Image(systemName: "arrow.down.circle")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(download.errorMessage == nil ? Color.secondary : Color.red)
+                            .frame(width: 22, height: 22)
+                            .contentShape(Rectangle())
+                            .onTapGesture(count: 2) {
+                                Task {
+                                    await download.start(language: language, fileName: topic.title)
+                                }
                             }
-                        }
-                        .accessibilityLabel("Download audio")
-                        .accessibilityHint("Double tap to download")
+                            .accessibilityLabel("Download audio")
+                            .accessibilityHint("Double tap to download")
+                    }
                 }
             }
         }

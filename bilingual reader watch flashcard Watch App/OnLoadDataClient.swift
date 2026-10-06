@@ -65,7 +65,7 @@ enum OnLoadDataClient {
 
         guard let rawWords else { return nil }
 
-        let topics = buildTopics(from: rawContent ?? [])
+        let topics = buildTopics(from: rawContent ?? [], language: language)
         var sentenceById = buildSentenceMap(from: rawContent ?? [])
         mergeStandaloneSentences(rawSentences, into: &sentenceById)
         let helperSentenceIds = collectAdhocSentenceIds(
@@ -96,7 +96,14 @@ enum OnLoadDataClient {
         let reviewableSentences = buildReviewableSentences(from: rawContent ?? [], now: now)
         let dueCount = mapped.filter(\.isDue).count
         let sentenceDue = reviewableSentences.filter(\.isDue).count
-        print("[getOnLoadData] \(language): \(dueCount)/\(mapped.count) words due, \(sentenceDue)/\(reviewableSentences.count) sentences due, \(topics.count) topics, \(helperSentenceIds.count) adhoc sentences")
+        let snippetCards = topics.reduce(0) { $0 + $1.snippets.filter { !$0.id.isEmpty && $0.card != nil }.count }
+        let snippetDue = topics.reduce(0) { partial, topic in
+            partial + topic.snippets.filter { snippet in
+                guard let due = snippet.card?.due else { return false }
+                return due < now
+            }.count
+        }
+        print("[getOnLoadData] \(language): \(dueCount)/\(mapped.count) words due, \(sentenceDue)/\(reviewableSentences.count) sentences due, \(snippetDue)/\(snippetCards) snippets due, \(topics.count) topics, \(helperSentenceIds.count) adhoc sentences")
         return LanguageBundle(
             words: mapped,
             topics: topics,
@@ -139,7 +146,7 @@ enum OnLoadDataClient {
     }
 
     /// Content rows: id + title + sentence ids + snippets.
-    private static func buildTopics(from contentItems: [[String: Any]]) -> [ContentTopic] {
+    private static func buildTopics(from contentItems: [[String: Any]], language: String) -> [ContentTopic] {
         contentItems.compactMap { item in
             let id = item["id"] as? String ?? ""
             let title = item["title"] as? String ?? ""
@@ -147,17 +154,29 @@ enum OnLoadDataClient {
             let sentenceIds = sentences.compactMap { $0["id"] as? String }
             guard !id.isEmpty, !sentenceIds.isEmpty else { return nil }
 
-            let rawSnippets = item["snippets"] as? [[String: Any]] ?? []
+            let cues = transcriptCues(from: sentences)
+            let rawSnippets = snippetDictionaries(from: item["snippets"])
             let snippets = rawSnippets.compactMap { snippet -> ContentSnippet? in
                 guard let time = doubleValue(snippet["time"]) else { return nil }
                 let isContracted = boolValue(snippet["isContracted"])
                     || boolValue(snippet["isContract"])
                 return ContentSnippet(
+                    id: snippet["id"] as? String ?? "",
+                    targetLang: snippet["targetLang"] as? String ?? "",
+                    baseLang: snippet["baseLang"] as? String ?? "",
                     focusedText: snippet["focusedText"] as? String,
                     suggestedFocusText: snippet["suggestedFocusText"] as? String,
                     time: time,
                     isContracted: isContracted,
-                    isPreSnippet: boolValue(snippet["isPreSnippet"])
+                    isPreSnippet: boolValue(snippet["isPreSnippet"]),
+                    card: ReviewDataParsing.card(from: snippet["reviewData"] as? [String: Any]),
+                    vocab: overlappingBreakdown(time: time, isContracted: isContracted, cues: cues),
+                    sentenceContext: overlappingSentences(
+                        time: time,
+                        isContracted: isContracted,
+                        cues: cues,
+                        language: language
+                    )
                 )
             }
 
@@ -229,6 +248,182 @@ enum OnLoadDataClient {
         }
 
         return map
+    }
+
+    /// Sentence cues in transcript order. End is the next sentence's time, matching web overlap.
+    private static func transcriptCues(from sentences: [[String: Any]]) -> [TranscriptCue] {
+        let times = sentences.map { doubleValue($0["time"]) }
+        return sentences.enumerated().compactMap { index, sentence in
+            guard let time = times[index] else { return nil }
+            let end: TimeInterval
+            if index + 1 < times.count, let next = times[index + 1], next > time {
+                end = next
+            } else {
+                end = time
+            }
+            let sentenceId = sentence["id"] as? String ?? ""
+            let sentenceText = sentence["targetLang"] as? String ?? ""
+            return TranscriptCue(
+                id: sentenceId,
+                time: time,
+                end: end,
+                targetLang: sentenceText,
+                baseLang: sentence["baseLang"] as? String ?? "",
+                meaning: sentenceMeaning(sentence["meaning"]),
+                vocab: breakdownWords(
+                    from: sentence,
+                    sentenceId: sentenceId,
+                    sentenceText: sentenceText,
+                    sentenceTime: time
+                )
+            )
+        }
+    }
+
+    /// Vocab from sentences whose span overlaps the snippet window (`time ± 1.5s`, or `± 0.75s`).
+    private static func overlappingBreakdown(
+        time: TimeInterval,
+        isContracted: Bool,
+        cues: [TranscriptCue]
+    ) -> [BreakdownWord] {
+        let padding: TimeInterval = isContracted ? 0.75 : 1.5
+        let windowStart = time - padding
+        let windowEnd = time + padding
+        var seen = Set<String>()
+        var words: [BreakdownWord] = []
+        for cue in cues {
+            guard cue.end > cue.time else { continue }
+            let overlapStart = max(cue.time, windowStart)
+            let overlapEnd = min(cue.end, windowEnd)
+            guard overlapStart < overlapEnd else { continue }
+            for word in cue.vocab where seen.insert(word.surfaceForm).inserted {
+                words.append(word)
+            }
+        }
+        return words
+    }
+
+    /// Sentences whose span overlaps the snippet window, plus the lines just outside it.
+    private static func overlappingSentences(
+        time: TimeInterval,
+        isContracted: Bool,
+        cues: [TranscriptCue],
+        language: String
+    ) -> SnippetSentenceContext {
+        let padding: TimeInterval = isContracted ? 0.75 : 1.5
+        let windowStart = time - padding
+        let windowEnd = time + padding
+        let indexes = cues.indices.filter { index in
+            let cue = cues[index]
+            guard cue.end > cue.time else { return false }
+            let overlapStart = max(cue.time, windowStart)
+            let overlapEnd = min(cue.end, windowEnd)
+            return overlapStart < overlapEnd
+        }
+        guard let first = indexes.first, let last = indexes.last else {
+            return SnippetSentenceContext()
+        }
+        let joiner = SnippetFocus.isTrimmedLanguage(language) ? "" : " "
+        let current = cues[first...last]
+        var breakdowns: [SnippetBreakdownGroup] = []
+        if first > 0, let group = breakdownGroup(cues[first - 1]) {
+            breakdowns.append(group)
+        }
+        for cue in current {
+            if let group = breakdownGroup(cue) {
+                breakdowns.append(group)
+            }
+        }
+        if last + 1 < cues.count, let group = breakdownGroup(cues[last + 1]) {
+            breakdowns.append(group)
+        }
+        var lines: [SnippetSentenceLine] = []
+        if first > 0 {
+            lines.append(sentenceLine(cues[first - 1], isCurrent: false, index: lines.count))
+        }
+        for cue in current {
+            lines.append(sentenceLine(cue, isCurrent: true, index: lines.count))
+        }
+        if last + 1 < cues.count {
+            lines.append(sentenceLine(cues[last + 1], isCurrent: false, index: lines.count))
+        }
+        return SnippetSentenceContext(
+            previousTarget: first > 0 ? cues[first - 1].targetLang : "",
+            currentTarget: current.map(\.targetLang).filter { !$0.isEmpty }.joined(separator: joiner),
+            currentBase: current.map(\.baseLang).filter { !$0.isEmpty }.joined(separator: joiner),
+            nextTarget: last + 1 < cues.count ? cues[last + 1].targetLang : "",
+            breakdowns: breakdowns,
+            lines: lines.filter { !$0.targetLang.isEmpty || !$0.baseLang.isEmpty }
+        )
+    }
+
+    private static func sentenceLine(_ cue: TranscriptCue, isCurrent: Bool, index: Int) -> SnippetSentenceLine {
+        let baseId = cue.id.isEmpty ? cue.targetLang : cue.id
+        return SnippetSentenceLine(
+            id: "\(index)-\(baseId)",
+            targetLang: cue.targetLang,
+            baseLang: cue.baseLang,
+            meaning: cue.meaning,
+            isCurrent: isCurrent
+        )
+    }
+
+    private static func sentenceMeaning(_ value: Any?) -> String {
+        let text = (value as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if text.isEmpty || text == "n/a" { return "" }
+        return text
+    }
+
+    private static func breakdownGroup(_ cue: TranscriptCue) -> SnippetBreakdownGroup? {
+        guard !cue.vocab.isEmpty else { return nil }
+        let id = cue.id.isEmpty ? cue.targetLang : cue.id
+        return SnippetBreakdownGroup(id: id, targetLang: cue.targetLang, words: cue.vocab)
+    }
+
+    private static func breakdownWords(
+        from sentence: [String: Any],
+        sentenceId: String,
+        sentenceText: String,
+        sentenceTime: TimeInterval
+    ) -> [BreakdownWord] {
+        dictionaries(from: sentence["vocab"]).compactMap { item in
+            let surface = (item["surfaceForm"] as? String)?
+                .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let meaning = (item["meaning"] as? String)?
+                .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            guard !surface.isEmpty, !meaning.isEmpty, meaning != "n/a" else { return nil }
+            return BreakdownWord(
+                surfaceForm: surface,
+                meaning: meaning,
+                sentenceId: sentenceId,
+                sentenceText: sentenceText,
+                sentenceTime: sentenceTime
+            )
+        }
+    }
+
+    private struct TranscriptCue {
+        let id: String
+        let time: TimeInterval
+        let end: TimeInterval
+        let targetLang: String
+        let baseLang: String
+        let meaning: String
+        let vocab: [BreakdownWord]
+    }
+
+    /// Firebase stores `content.snippets` as an id-keyed object. The web turns that into an array with `Object.values`.
+    private static func snippetDictionaries(from value: Any?) -> [[String: Any]] {
+        if let object = value as? [String: Any] {
+            return object.compactMap { key, raw in
+                guard var snippet = raw as? [String: Any] else { return nil }
+                if (snippet["id"] as? String)?.isEmpty != false {
+                    snippet["id"] = key
+                }
+                return snippet
+            }
+        }
+        return dictionaries(from: value)
     }
 
     /// Firebase `sentences` may be an array or a keyed object (`Object.values` on the server).

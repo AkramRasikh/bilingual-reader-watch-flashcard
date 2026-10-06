@@ -77,6 +77,37 @@ enum WordReviewClient {
         try await postJSON(url: GeneratedEnv.updateSentenceURL, body: body)
     }
 
+    /// POST saveSnippet — same body as web `/api/saveSnippet`.
+    static func saveSnippet(
+        language: String,
+        contentId: String,
+        snippet: ReviewableSnippet,
+        reviewCard: Card?
+    ) async throws {
+        let body: [String: Any] = [
+            "language": language,
+            "contentId": contentId,
+            "snippetData": snippet.snippetDataDictionary(reviewCard: reviewCard),
+        ]
+        print("[WordReviewClient] saveSnippet \(snippet.id)")
+        try await postJSON(url: GeneratedEnv.saveSnippetURL, body: body)
+    }
+
+    /// POST deleteSnippet — removes the snippet, same as web trash on snippet review.
+    static func deleteSnippet(
+        language: String,
+        contentId: String,
+        snippetId: String
+    ) async throws {
+        let body: [String: Any] = [
+            "language": language,
+            "contentId": contentId,
+            "snippetId": snippetId,
+        ]
+        print("[WordReviewClient] deleteSnippet \(body)")
+        try await postJSON(url: GeneratedEnv.deleteSnippetURL, body: body)
+    }
+
     /// POST deleteWord — same as web vocab trash (`isRemoveReview: true`).
     static func deleteWord(
         wordId: String,
@@ -92,6 +123,49 @@ enum WordReviewClient {
         }
         print("[WordReviewClient] deleteWord \(body)")
         try await postJSON(url: GeneratedEnv.deleteWordURL, body: body)
+    }
+
+    /// POST addWord — Deepseek path (`isGoogle: false`), same body as web `/api/saveWord`.
+    static func saveBreakdownWord(
+        language: String,
+        surfaceForm: String,
+        meaning: String,
+        sentenceId: String,
+        contextSentence: String
+    ) async throws -> Word {
+        let reviewData = try VocabSRS.newWordReviewData()
+        let body: [String: Any] = [
+            "language": language,
+            "word": surfaceForm,
+            "context": sentenceId,
+            "contextSentence": contextSentence,
+            "meaning": meaning,
+            "isGoogle": false,
+            "reviewData": reviewData,
+        ]
+        print("[WordReviewClient] saveWord \(surfaceForm)")
+        let (data, http) = try await postJSONReturning(
+            url: GeneratedEnv.addWordURL,
+            body: body,
+            timeout: 120
+        )
+
+        if http.statusCode == 409 {
+            throw ReviewClientError.alreadyExists
+        }
+        guard (200 ... 299).contains(http.statusCode) else {
+            let message = serverMessage(from: data, status: http.statusCode)
+            print("[WordReviewClient] saveWord failed: \(message)")
+            throw ReviewClientError.failed(message)
+        }
+
+        guard let root = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let wordDict = root["word"] as? [String: Any],
+              let word = Word(dictionary: wordDict)
+        else {
+            throw ReviewClientError.failed("Couldn’t parse word")
+        }
+        return word
     }
 
     /// POST addImprovWord — body `{ language, inquiry }`, 200 `{ word, sentence }`.
