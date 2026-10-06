@@ -11,7 +11,6 @@ import SwiftUI
 
 private enum AppRoute: Hashable {
     case language(String)
-    case topic(language: String, contentId: String)
     case shadowing(language: String, contentId: String)
     /// `contentId == nil` means All due words for the language.
     case review(language: String, contentId: String?)
@@ -49,8 +48,9 @@ struct ContentView: View {
                                         .stroke(Color.secondary.opacity(0.35), lineWidth: cachedLanguages.contains(language) ? 0 : 1)
                                 )
 
-                            Text(displayName(for: language))
-                                .foregroundStyle(.primary)
+                            Text(flag(for: language))
+                                .font(.title3)
+                                .accessibilityLabel(displayName(for: language))
 
                             Spacer()
 
@@ -73,7 +73,7 @@ struct ContentView: View {
                     }
                 }
             }
-            .navigationTitle("Languages")
+            .toolbar(.hidden, for: .navigationBar)
             .overlay {
                 if let loadError {
                     Text(loadError)
@@ -118,33 +118,13 @@ struct ContentView: View {
                         onSelectReview: { contentId in
                             path.append(AppRoute.review(language: language, contentId: contentId))
                         },
-                        onSelectTopic: { contentId in
-                            path.append(AppRoute.topic(language: language, contentId: contentId))
+                        onSelectSentenceReview: { contentId in
+                            path.append(AppRoute.sentenceReview(language: language, contentId: contentId))
+                        },
+                        onSelectShadowing: { contentId in
+                            path.append(AppRoute.shadowing(language: language, contentId: contentId))
                         }
                     )
-
-                case .topic(let language, let contentId):
-                    if let topic = bundlesByLanguage[language]?.topics.first(where: { $0.id == contentId }) {
-                        TopicDetailView(
-                            language: language,
-                            topic: topic,
-                            dueCount: topicDueCount(language: language, contentId: contentId),
-                            sentenceDueCount: topicSentenceDueCount(language: language, contentId: contentId),
-                            onSelectReview: {
-                                path.append(AppRoute.review(language: language, contentId: contentId))
-                            },
-                            onSelectSentenceReview: {
-                                path.append(AppRoute.sentenceReview(language: language, contentId: contentId))
-                            },
-                            onSelectShadowing: {
-                                path.append(AppRoute.shadowing(language: language, contentId: contentId))
-                            }
-                        )
-                    } else {
-                        Text("Content unavailable")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
 
                 case .shadowing(let language, let contentId):
                     if let topic = bundlesByLanguage[language]?.topics.first(where: { $0.id == contentId }) {
@@ -168,6 +148,9 @@ struct ContentView: View {
                         adhocSentenceIds: bundlesByLanguage[language]?.adhocSentenceIds ?? [],
                         currentDueWords: {
                             bundlesByLanguage[language]?.words(forContentId: contentId) ?? []
+                        },
+                        totalInReview: {
+                            bundlesByLanguage[language]?.wordReviewCount(forContentId: contentId) ?? 0
                         },
                         onBack: { popRoute() },
                         onReviewed: { wordId, card in
@@ -278,25 +261,13 @@ struct ContentView: View {
         let wordsDue = bundle.dueCount
         let sentencesDue = bundle.sentenceDueCount
         return HStack(spacing: 4) {
-            Text("\(wordsDue)")
-            if sentencesDue > 0 {
-                Text("·")
-                Text("\(sentencesDue)")
-            }
+            Text("\(wordsDue) (W)")
+            Text("\(sentencesDue) (S)")
         }
-        .font(.caption2)
+        .font(.system(size: 9))
         .foregroundStyle(.secondary)
         .monospacedDigit()
-    }
-
-    private func topicDueCount(language: String, contentId: String) -> Int {
-        _ = dueClock
-        return bundlesByLanguage[language]?.words(forContentId: contentId).count ?? 0
-    }
-
-    private func topicSentenceDueCount(language: String, contentId: String) -> Int {
-        _ = dueClock
-        return bundlesByLanguage[language]?.sentenceDueCount(forContentId: contentId) ?? 0
+        .accessibilityLabel("\(wordsDue) words, \(sentencesDue) sentences")
     }
 
     private func updateReviewedWord(_ wordId: String, card: Card, language: String) {
@@ -318,13 +289,47 @@ struct ContentView: View {
         bundle = bundle.insertingAdhocWord(word)
         bundlesByLanguage[language] = bundle
         LocalWordStore.save(language: language, bundle: bundle)
+        saveAdhocAudio(for: word, language: language)
+    }
+
+    /// Best-effort clip save. Word persistence does not wait on this.
+    private func saveAdhocAudio(for word: Word, language: String) {
+        guard let fileName = word.audioFileName, !fileName.isEmpty else { return }
+        Task {
+            do {
+                try await AudioFileStore.download(language: language, fileName: fileName)
+            } catch AudioFileStoreError.badStatus(404) {
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                do {
+                    try await AudioFileStore.download(language: language, fileName: fileName)
+                } catch {
+                    print("[AudioFileStore] adhoc download failed: \(error)")
+                }
+            } catch {
+                print("[AudioFileStore] adhoc download failed: \(error)")
+            }
+        }
     }
 
     private func removeWord(_ wordId: String, language: String) {
         guard var bundle = bundlesByLanguage[language] else { return }
+        let adhocAudio = adhocAudioFileName(in: bundle, wordId: wordId)
         bundle = bundle.removingWord(id: wordId)
         bundlesByLanguage[language] = bundle
         LocalWordStore.save(language: language, bundle: bundle)
+        if let adhocAudio {
+            AudioFileStore.remove(language: language, fileName: adhocAudio)
+        }
+    }
+
+    /// Sentence clip for an Adhoc word. Topic audio is shared and stays on disk.
+    private func adhocAudioFileName(in bundle: LanguageBundle, wordId: String) -> String? {
+        guard let word = bundle.words.first(where: { $0.id == wordId }),
+              let sentenceId = word.contexts.first,
+              bundle.adhocSentenceIds.contains(sentenceId)
+        else { return nil }
+        let fileName = word.audioFileName ?? sentenceId
+        return fileName.isEmpty ? nil : fileName
     }
 
     private func removeSentenceReview(_ sentenceId: String, language: String) {
@@ -337,6 +342,17 @@ struct ContentView: View {
     private func displayName(for language: String) -> String {
         guard !language.isEmpty else { return "" }
         return language.prefix(1).uppercased() + language.dropFirst()
+    }
+
+    /// Arabic uses the Sudanese flag.
+    private func flag(for language: String) -> String {
+        switch language {
+        case "arabic": return "🇸🇩"
+        case "chinese": return "🇨🇳"
+        case "french": return "🇫🇷"
+        case "japanese": return "🇯🇵"
+        default: return ""
+        }
     }
 }
 

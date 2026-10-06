@@ -15,6 +15,7 @@ struct ReviewSessionView: View {
     let initialWords: [Word]
     var adhocSentenceIds: [String] = []
     var currentDueWords: () -> [Word] = { [] }
+    var totalInReview: () -> Int = { 0 }
     var onBack: () -> Void = {}
     var onReviewed: (String, Card) -> Void = { _, _ in }
     var onDeleted: (String) -> Void = { _ in }
@@ -32,8 +33,9 @@ struct ReviewSessionView: View {
                     word: word,
                     language: language,
                     remainingCount: queue.count,
+                    totalInReview: totalInReview(),
                     adhocSentenceIds: adhocSentenceIds,
-                    onBack: onBack,
+                    onBack: leaveSession,
                     onReviewed: { wordId, card in
                         parkReviewed(wordId: wordId, card: card)
                         onReviewed(wordId, card)
@@ -49,10 +51,13 @@ struct ReviewSessionView: View {
                     Text(queue.isEmpty && didInit ? "Done for now" : "No words due")
                         .font(.caption)
                         .multilineTextAlignment(.center)
-                    Button("Back", action: onBack)
+                    Button("Back", action: leaveSession)
                         .font(.caption2)
                 }
             }
+        }
+        .onDisappear {
+            WordAudioPlayer.shared.stop()
         }
         .onAppear {
             guard !didInit else { return }
@@ -62,6 +67,11 @@ struct ReviewSessionView: View {
         .onReceive(duePoll) { _ in
             enqueueNewlyDue()
         }
+    }
+
+    private func leaveSession() {
+        WordAudioPlayer.shared.stop()
+        onBack()
     }
 
     private func parkReviewed(wordId: String, card: Card) {

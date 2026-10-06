@@ -438,7 +438,7 @@ struct SentenceFlashcardView: View {
     }
 }
 
-private struct PlaybackEdgeGuide: View {
+struct PlaybackEdgeGuide: View {
     var body: some View {
         GeometryReader { geo in
             Path { path in

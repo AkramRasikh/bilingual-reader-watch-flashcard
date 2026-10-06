@@ -2,7 +2,7 @@
 //  TopicDetailView.swift
 //  bilingual reader watch flashcard Watch App
 //
-//  Per-content audio download. Review still uses the existing flashcard player.
+//  Per-content audio download, started from the language content list.
 //
 
 import SwiftUI
@@ -29,101 +29,6 @@ final class TopicAudioSession: ObservableObject {
             errorMessage = "Download failed"
         }
         isDownloading = false
-    }
-}
-
-struct TopicDetailView: View {
-    let language: String
-    let topic: ContentTopic
-    let dueCount: Int
-    let sentenceDueCount: Int
-    var onSelectReview: () -> Void = {}
-    var onSelectSentenceReview: () -> Void = {}
-    var onSelectShadowing: () -> Void = {}
-
-    @ObservedObject private var library = AudioLibrary.shared
-    @StateObject private var download = TopicAudioSession()
-
-    private var fileName: String { topic.title }
-
-    private var isSaved: Bool {
-        _ = library.generation
-        return AudioFileStore.hasFile(language: language, fileName: fileName)
-    }
-
-    private var statusText: String {
-        if isSaved { return "Audio saved" }
-        if download.isDownloading { return "Downloading…" }
-        return "Audio not saved"
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(statusText)
-                .font(.caption2)
-                .fontWeight(.semibold)
-                .foregroundStyle(isSaved ? Color.green : Color.secondary)
-
-            if let errorMessage = download.errorMessage {
-                Text(errorMessage)
-                    .font(.caption2)
-                    .foregroundStyle(.red)
-            }
-
-            HStack(alignment: .center, spacing: 6) {
-                Button("Review") {
-                    onSelectReview()
-                }
-                .frame(maxWidth: .infinity)
-
-                if download.isDownloading {
-                    downloadProgress
-                } else if !isSaved {
-                    Image(systemName: "arrow.down.circle")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 28, height: 36)
-                        .contentShape(Rectangle())
-                        .onTapGesture(count: 2) {
-                            Task {
-                                await download.start(language: language, fileName: fileName)
-                            }
-                        }
-                        .accessibilityLabel("Download audio")
-                        .accessibilityHint("Double tap to download")
-                }
-            }
-
-            Button("Sentences") {
-                onSelectSentenceReview()
-            }
-
-            Button("Shadowing") {
-                onSelectShadowing()
-            }
-
-            Text("\(dueCount) words · \(sentenceDueCount) sentences")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
-
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 4)
-        .navigationTitle(topic.title)
-        .raisedWatchBackButton()
-    }
-
-    @ViewBuilder
-    private var downloadProgress: some View {
-        if download.fraction > 0 {
-            ProgressView(value: download.fraction)
-                .frame(width: 28, height: 36)
-        } else {
-            ProgressView()
-                .frame(width: 28, height: 36)
-        }
     }
 }
 

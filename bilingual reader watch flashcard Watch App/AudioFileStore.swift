@@ -76,6 +76,20 @@ enum AudioFileStore {
         await AudioLibrary.shared.bump()
     }
 
+    static func remove(language: String, fileName: String) {
+        guard let url = fileURL(language: language, fileName: fileName),
+              FileManager.default.fileExists(atPath: url.path)
+        else { return }
+        do {
+            try FileManager.default.removeItem(at: url)
+            print("[AudioFileStore] removed \(language)/\(fileName)")
+        } catch {
+            print("[AudioFileStore] remove failed: \(error)")
+            return
+        }
+        Task { await AudioLibrary.shared.bump() }
+    }
+
     private static func directoryURL(language: String) -> URL? {
         guard let root = FileManager.default.urls(
             for: .applicationSupportDirectory,

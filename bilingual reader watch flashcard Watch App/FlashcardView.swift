@@ -2,6 +2,10 @@
 //  FlashcardView.swift
 //  bilingual reader watch flashcard Watch App
 //
+//  One due word per screen. Definition starts in the center; swipe left for
+//  the target-language form, then transliteration and sentence context.
+//  Top bar matches sentence review: due/total, loop, slow, and right-edge play/stop.
+//
 
 import SwiftUI
 import FSRS
@@ -10,6 +14,7 @@ struct FlashcardView: View {
     let word: Word
     var language: String = ""
     var remainingCount: Int = 0
+    var totalInReview: Int = 0
     var adhocSentenceIds: [String] = []
     var onBack: () -> Void = {}
     var onReviewed: (String, Card) -> Void = { _, _ in }
@@ -17,8 +22,7 @@ struct FlashcardView: View {
 
     @ObservedObject private var audioPlayer = WordAudioPlayer.shared
     @ObservedObject private var audioLibrary = AudioLibrary.shared
-    @State private var isRevealed = false
-    @State private var formsPage = 0
+    @State private var contentPage = 0
     @State private var actionsPage = 0
     @State private var expandedText: ExpandedText?
     @State private var gradeLabels: [Rating: String] = [:]
@@ -28,10 +32,12 @@ struct FlashcardView: View {
 
     private let gradeButtons: [Rating] = [.again, .hard, .good, .easy]
 
-    private var isThisWordPlaying: Bool {
-        guard word.canPlayAudio, let fileName = word.audioFileName else { return false }
-        let key = WordAudioPlayer.itemKey(fileName: fileName, language: language, cue: word.audioCue)
-        return audioPlayer.isPlaying && audioPlayer.activeKey == key
+    private var dueLabel: String {
+        "\(remainingCount)/\(max(totalInReview, remainingCount))"
+    }
+
+    private var isAudioPlaying: Bool {
+        audioPlayer.isPlaying
     }
 
     private var isLocalAudio: Bool {
@@ -40,89 +46,116 @@ struct FlashcardView: View {
         return AudioFileStore.hasFile(language: language, fileName: fileName)
     }
 
+    /// Standalone clips start at 0 and loop the whole file. Topic cues loop a
+    /// short span from the word so the rest of the article does not repeat.
+    private var wordLoopWindow: (start: TimeInterval, end: TimeInterval?) {
+        let duration = audioPlayer.clock.duration
+        let fileDuration = duration > 0 ? duration : nil
+        let cue = word.audioCue
+        if cue <= 0.05 {
+            return (0, fileDuration)
+        }
+        let end = cue + 4
+        return (cue, fileDuration.map { min($0, end) } ?? end)
+    }
+
     var body: some View {
         VStack(spacing: 4) {
-            // Compact back + definition + play + count
-            HStack(alignment: .top, spacing: 4) {
+            HStack(alignment: .top, spacing: 10) {
                 Button(action: onBack) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 12, weight: .bold))
-                        .frame(width: 28, height: 28)
-                        .contentShape(Rectangle())
+                    HStack(spacing: 3) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 10, weight: .bold))
+                        Text(dueLabel)
+                            .font(.system(size: 9, weight: .semibold))
+                            .monospacedDigit()
+                    }
+                    .padding(.top, 6)
+                    .frame(minWidth: 40, minHeight: 32, alignment: .leading)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Back")
-
-                Text(word.definition)
-                    .font(.caption2)
-                    .fontWeight(.semibold)
-                    .multilineTextAlignment(.leading)
-                    .lineLimit(2)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
-                    .onLongPressGesture {
-                        expandedText = ExpandedText(
-                            title: "Definition",
-                            body: word.definition
-                        )
-                    }
+                .fixedSize(horizontal: true, vertical: false)
+                .accessibilityLabel("Back, \(remainingCount) of \(max(totalInReview, remainingCount)) words due")
 
                 if word.canPlayAudio {
-                    Button {
-                        guard let fileName = word.audioFileName else { return }
-                        audioPlayer.toggle(fileName: fileName, language: language, cue: word.audioCue)
-                    } label: {
-                        Image(systemName: isThisWordPlaying ? "pause.fill" : "play.fill")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(isLocalAudio ? Color.green : Color.primary)
-                            .frame(width: 28, height: 22)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(isThisWordPlaying ? "Pause" : "Play")
-                    .accessibilityHint(isLocalAudio ? "Saved audio" : "Streaming audio")
-                }
+                    HStack(alignment: .top, spacing: 12) {
+                        Button {
+                            let window = wordLoopWindow
+                            print("[word loop] cue=\(word.audioCue) window=\(window.start)->\(window.end as Any)")
+                            audioPlayer.toggleLoop(start: window.start, end: window.end)
+                        } label: {
+                            Image(systemName: "repeat")
+                                .font(.system(size: 11, weight: .semibold))
+                                .frame(width: 28, height: 32)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(audioPlayer.isLooping ? .orange : .primary)
+                        .accessibilityLabel(audioPlayer.isLooping ? "Stop looping" : "Loop word")
+                        .accessibilityAddTraits(audioPlayer.isLooping ? .isSelected : [])
 
-                if remainingCount > 0 {
-                    Text("\(remainingCount)")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(.secondary)
-                        .padding(.top, 2)
+                        Button {
+                            audioPlayer.toggleSlowRate()
+                        } label: {
+                            Text("0.75×")
+                                .font(.system(size: 11, weight: .semibold))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
+                                .frame(minWidth: 36, minHeight: 32)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(audioPlayer.playbackRate < 1 ? .orange : .primary)
+                        .accessibilityLabel(audioPlayer.playbackRate < 1 ? "Normal speed" : "Slow to 0.75")
+                        .accessibilityAddTraits(audioPlayer.playbackRate < 1 ? .isSelected : [])
+
+                        Image(systemName: isAudioPlaying ? "stop.fill" : "play.fill")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(isLocalAudio ? Color.green : Color.primary)
+                            .frame(width: 22, height: 26, alignment: .trailing)
+                            .accessibilityHidden(true)
+                    }
+                    .frame(maxWidth: .infinity)
+                } else {
+                    Spacer(minLength: 0)
                 }
             }
+            .zIndex(10)
+            .background(.background)
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            // Middle — content-sized; real blur clipped to this block only
-            formsSection
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 4)
-                .padding(.vertical, 4)
-                .drawingGroup()
-                .blur(radius: isRevealed ? 0 : 5)
-                .padding(5) // keep blur soft-edge inside the mask
-                .mask(
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                )
-                .animation(.easeInOut(duration: 0.15), value: isRevealed)
-                .contentShape(Rectangle())
-                .gesture(formsSwipeGesture)
-                .onTapGesture(count: 2) {
-                    isRevealed.toggle()
-                }
-                .onTapGesture(count: 1) {
-                    isRevealed = true
-                }
-                .onLongPressGesture {
-                    guard isRevealed else { return }
-                    expandedText = ExpandedText(
-                        title: expandedTitle(for: formsPage),
-                        body: expandedBody(for: formsPage)
-                    )
-                }
-                .accessibilityLabel(isRevealed ? "Answer revealed" : "Answer hidden, tap to reveal")
-                .opacity(isSubmitting ? 0.45 : 1)
+            GeometryReader { geo in
+                ZStack(alignment: .topTrailing) {
+                    wordBody
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding(.horizontal, 4)
+                        .contentShape(Rectangle())
+                        .gesture(formsSwipeGesture)
+                        .onLongPressGesture {
+                            expandedText = ExpandedText(
+                                title: expandedTitle(for: currentFace),
+                                body: expandedBody(for: currentFace)
+                            )
+                        }
 
-            Spacer(minLength: 0)
+                    if word.canPlayAudio {
+                        Color.clear
+                            .frame(width: geo.size.width * 0.25)
+                            .frame(maxHeight: .infinity)
+                            .overlay(alignment: .leading) {
+                                PlaybackEdgeGuide()
+                            }
+                            .contentShape(Rectangle())
+                            .gesture(playbackEdgeGesture)
+                            .accessibilityLabel(isAudioPlaying ? "Stop" : "Play")
+                            .accessibilityHint(isLocalAudio ? "Saved audio" : "Streaming audio")
+                            .accessibilityAddTraits(.isButton)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .opacity(isSubmitting ? 0.45 : 1)
 
             if let errorMessage {
                 Text(errorMessage)
@@ -191,8 +224,7 @@ struct FlashcardView: View {
             }
         }
         .task(id: word.id) {
-            isRevealed = false
-            formsPage = 0
+            contentPage = 0
             actionsPage = 0
             errorMessage = nil
             audioPlayer.stop()
@@ -200,23 +232,108 @@ struct FlashcardView: View {
         }
     }
 
-    private var formsPageCount: Int {
-        word.sentence == nil ? 2 : 3
+    private var faces: [WordReviewFace] {
+        var pages: [WordReviewFace] = [.definition]
+        if !word.surfaceForm.isEmpty || !word.baseForm.isEmpty {
+            pages.append(.target)
+        }
+        if !word.transliteration.isEmpty || word.mnemonic != nil {
+            pages.append(.details)
+        }
+        if let sentence = word.sentence,
+           !sentence.targetLang.isEmpty || !sentence.baseLang.isEmpty
+        {
+            pages.append(.context)
+        }
+        return pages
     }
 
-    private var formsSection: some View {
-        Group {
-            switch formsPage {
-            case 0:
-                primaryFormsPage
-            case 1:
-                detailFormsPage
-            default:
-                sentenceContextPage
+    private var currentFace: WordReviewFace {
+        let pages = faces
+        guard !pages.isEmpty else { return .definition }
+        return pages[min(contentPage, pages.count - 1)]
+    }
+
+    @ViewBuilder
+    private var wordBody: some View {
+        switch currentFace {
+        case .definition:
+            centeredLine(word.definition.isEmpty ? "(no definition)" : word.definition)
+        case .target:
+            centeredLines(primary: displayedTargetForm, secondary: secondaryTargetForm)
+        case .details:
+            centeredLines(
+                primary: displayedTargetForm,
+                secondary: detailsSecondary,
+                tertiary: detailsTertiary
+            )
+        case .context:
+            centeredLines(
+                primary: word.sentence?.targetLang ?? "",
+                secondary: word.sentence?.baseLang
+            )
+        }
+    }
+
+    /// Headline on the target-language screens: surface form, or base form when that is the only one.
+    private var displayedTargetForm: String {
+        word.surfaceForm.isEmpty ? word.baseForm : word.surfaceForm
+    }
+
+    private var secondaryTargetForm: String? {
+        guard !word.baseForm.isEmpty, word.baseForm != word.surfaceForm else { return nil }
+        return word.baseForm
+    }
+
+    /// Reading under the word. A mnemonic-only card uses the mnemonic in that spot.
+    private var detailsSecondary: String? {
+        if !word.transliteration.isEmpty { return word.transliteration }
+        return word.mnemonic
+    }
+
+    private var detailsTertiary: String? {
+        guard !word.transliteration.isEmpty else { return nil }
+        return word.mnemonic
+    }
+
+    private func centeredLine(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 15, weight: .bold))
+            .foregroundStyle(Color.white)
+            .multilineTextAlignment(.center)
+            .lineLimit(4)
+            .minimumScaleFactor(0.7)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func centeredLines(primary: String, secondary: String?, tertiary: String? = nil) -> some View {
+        VStack(spacing: 3) {
+            if !primary.isEmpty {
+                Text(primary)
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(Color.white)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.7)
+            }
+            if let secondary, !secondary.isEmpty {
+                Text(secondary)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.7)
+            }
+            if let tertiary, !tertiary.isEmpty {
+                Text(tertiary)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.tertiary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.7)
             }
         }
-        .frame(maxWidth: .infinity)
-        .animation(.easeInOut(duration: 0.15), value: formsPage)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var formsSwipeGesture: some Gesture {
@@ -224,13 +341,47 @@ struct FlashcardView: View {
             .onEnded { value in
                 let horizontal = value.translation.width
                 guard abs(horizontal) > abs(value.translation.height) else { return }
-
-                if horizontal < 0, formsPage < formsPageCount - 1 {
-                    formsPage += 1
-                } else if horizontal > 0, formsPage > 0 {
-                    formsPage -= 1
-                }
+                applyContentSwipe(horizontal)
             }
+    }
+
+    private var playbackEdgeGesture: some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onEnded { value in
+                let horizontal = value.translation.width
+                let vertical = value.translation.height
+                if abs(horizontal) > 20, abs(horizontal) > abs(vertical) {
+                    applyContentSwipe(horizontal)
+                    return
+                }
+                guard hypot(horizontal, vertical) < 12, !isSubmitting else { return }
+                toggleWordPlayback()
+            }
+    }
+
+    private func applyContentSwipe(_ horizontal: CGFloat) {
+        let last = faces.count - 1
+        guard last >= 0 else { return }
+        withAnimation(.easeInOut(duration: 0.15)) {
+            if horizontal < 0, contentPage < last {
+                contentPage += 1
+            } else if horizontal > 0, contentPage > 0 {
+                contentPage -= 1
+            }
+        }
+    }
+
+    private func toggleWordPlayback() {
+        guard let fileName = word.audioFileName else { return }
+        if isAudioPlaying {
+            audioPlayer.pause()
+        } else {
+            audioPlayer.toggle(
+                fileName: fileName,
+                language: language,
+                cue: audioPlayer.isLooping ? wordLoopWindow.start : word.audioCue
+            )
+        }
     }
 
     private var actionsSwipeGesture: some Gesture {
@@ -351,109 +502,38 @@ struct FlashcardView: View {
         return [sentenceId]
     }
 
-    private var primaryFormsPage: some View {
-        VStack(spacing: 2) {
-            if !word.surfaceForm.isEmpty {
-                Text(word.surfaceForm)
-                    .font(.headline)
-                    .lineLimit(2)
-            }
-            if !word.baseForm.isEmpty, word.baseForm != word.surfaceForm {
-                Text(word.baseForm)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-        }
-        .multilineTextAlignment(.center)
-        .frame(maxWidth: .infinity)
+    private func joinedLines(_ lines: [String?]) -> String {
+        lines.compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: "\n")
     }
 
-    private var detailFormsPage: some View {
-        VStack(spacing: 2) {
-            if !word.surfaceForm.isEmpty {
-                Text(word.surfaceForm)
-                    .font(.headline)
-                    .lineLimit(1)
-            }
-            if !word.transliteration.isEmpty {
-                Text(word.transliteration)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-            if let mnemonic = word.mnemonic {
-                Text(mnemonic)
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-                    .lineLimit(2)
-            }
-        }
-        .multilineTextAlignment(.center)
-        .frame(maxWidth: .infinity)
-    }
-
-    private var sentenceContextPage: some View {
-        VStack(spacing: 2) {
-            if let targetLang = word.sentence?.targetLang, !targetLang.isEmpty {
-                Text(targetLang)
-                    .font(.headline)
-                    .lineLimit(2)
-            }
-            if let baseLang = word.sentence?.baseLang, !baseLang.isEmpty {
-                Text(baseLang)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-            }
-        }
-        .multilineTextAlignment(.center)
-        .frame(maxWidth: .infinity)
-    }
-
-    private func expandedTitle(for page: Int) -> String {
-        switch page {
-        case 0: return "Forms"
-        case 1: return "Details"
-        default: return "Sentence"
+    private func expandedTitle(for face: WordReviewFace) -> String {
+        switch face {
+        case .definition: return "Definition"
+        case .target: return "Word"
+        case .details: return "Details"
+        case .context: return "Sentence"
         }
     }
 
-    private func expandedBody(for page: Int) -> String {
-        switch page {
-        case 0: return primaryFormsFullText
-        case 1: return detailFormsFullText
-        default: return sentenceContextFullText
+    private func expandedBody(for face: WordReviewFace) -> String {
+        switch face {
+        case .definition:
+            return word.definition
+        case .target:
+            return joinedLines([displayedTargetForm, secondaryTargetForm])
+        case .details:
+            return joinedLines([displayedTargetForm, detailsSecondary, detailsTertiary])
+        case .context:
+            return joinedLines([word.sentence?.targetLang, word.sentence?.baseLang])
         }
     }
+}
 
-    private var primaryFormsFullText: String {
-        var lines: [String] = []
-        if !word.surfaceForm.isEmpty { lines.append(word.surfaceForm) }
-        if !word.baseForm.isEmpty, word.baseForm != word.surfaceForm {
-            lines.append(word.baseForm)
-        }
-        return lines.joined(separator: "\n")
-    }
-
-    private var detailFormsFullText: String {
-        var lines: [String] = []
-        if !word.surfaceForm.isEmpty { lines.append(word.surfaceForm) }
-        if !word.transliteration.isEmpty { lines.append(word.transliteration) }
-        if let mnemonic = word.mnemonic { lines.append(mnemonic) }
-        return lines.joined(separator: "\n")
-    }
-
-    private var sentenceContextFullText: String {
-        var lines: [String] = []
-        if let targetLang = word.sentence?.targetLang, !targetLang.isEmpty {
-            lines.append(targetLang)
-        }
-        if let baseLang = word.sentence?.baseLang, !baseLang.isEmpty {
-            lines.append(baseLang)
-        }
-        return lines.joined(separator: "\n")
-    }
+private enum WordReviewFace {
+    case definition
+    case target
+    case details
+    case context
 }
 
 private struct ExpandedText: Identifiable {
@@ -501,6 +581,7 @@ private extension Rating {
             time: 12.5
         ))!,
         language: "chinese",
-        remainingCount: 7
+        remainingCount: 7,
+        totalInReview: 20
     )
 }
