@@ -14,6 +14,7 @@ struct SentenceFlashcardView: View {
     var language: String = ""
     var remainingDue: Int = 0
     var totalInReview: Int = 0
+    var contentTitle: String? = nil
     var onBack: () -> Void = {}
     var onReviewed: (String, Card) -> Void = { _, _ in }
     var onRemovedReview: (String) -> Void = { _ in }
@@ -25,10 +26,12 @@ struct SentenceFlashcardView: View {
     @State private var expandedText: SentenceExpandedText?
     @State private var gradeLabels: [Rating: String] = [:]
     @State private var nextCards: [Rating: Card] = [:]
+    @State private var replaceEasyWithDelete = false
     @State private var isSubmitting = false
     @State private var errorMessage: String?
 
     private let gradeButtons: [Rating] = [.again, .hard, .good, .easy]
+    private let deleteTint = Color(red: 0.85, green: 0.65, blue: 0.13)
 
     private var isAudioPlaying: Bool {
         audioPlayer.isPlaying
@@ -113,6 +116,7 @@ struct SentenceFlashcardView: View {
 
     var body: some View {
         VStack(spacing: 4) {
+            VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .top, spacing: 10) {
                 Button(action: onBack) {
                     HStack(spacing: 3) {
@@ -173,6 +177,15 @@ struct SentenceFlashcardView: View {
                     Spacer(minLength: 0)
                 }
             }
+
+            if let contentTitle, !contentTitle.isEmpty {
+                Text(contentTitle)
+                    .font(.system(size: 8))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            }
             .zIndex(10)
             .background(.background)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -220,17 +233,32 @@ struct SentenceFlashcardView: View {
                 if actionsPage == 0 {
                     HStack(spacing: 4) {
                         ForEach(gradeButtons, id: \.self) { rating in
-                            Button {
-                                Task { await submitGrade(rating) }
-                            } label: {
-                                Text(gradeLabels[rating] ?? "…")
-                                    .font(.system(size: 10).weight(.semibold))
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.7)
-                                    .frame(maxWidth: .infinity)
+                            if rating == .easy, replaceEasyWithDelete {
+                                Button {
+                                    Task { await submitRemoveReview() }
+                                } label: {
+                                    Image(systemName: "trash.fill")
+                                        .font(.system(size: 14).weight(.semibold))
+                                        .foregroundStyle(deleteTint)
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.bordered)
+                                .tint(deleteTint)
+                                .disabled(isSubmitting)
+                                .accessibilityLabel("Remove from review")
+                            } else {
+                                Button {
+                                    Task { await submitGrade(rating) }
+                                } label: {
+                                    Text(gradeLabels[rating] ?? "…")
+                                        .font(.system(size: 10).weight(.semibold))
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.7)
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.bordered)
+                                .disabled(isSubmitting || nextCards[rating] == nil)
                             }
-                            .buttonStyle(.bordered)
-                            .disabled(isSubmitting || nextCards[rating] == nil)
                         }
                     }
                 } else {
@@ -238,11 +266,11 @@ struct SentenceFlashcardView: View {
                         Button {} label: {
                             Image(systemName: "trash.fill")
                                 .font(.system(size: 14).weight(.semibold))
-                                .foregroundStyle(Color(red: 0.85, green: 0.65, blue: 0.13))
+                                .foregroundStyle(deleteTint)
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.bordered)
-                        .tint(Color(red: 0.85, green: 0.65, blue: 0.13))
+                        .tint(deleteTint)
                         .allowsHitTesting(false)
                         .accessibilityHidden(true)
 
@@ -278,6 +306,7 @@ struct SentenceFlashcardView: View {
             revealedFace = .sentence
             actionsPage = 0
             errorMessage = nil
+            replaceEasyWithDelete = false
             audioPlayer.clearLoop()
             await computeNextReviews()
         }
@@ -365,6 +394,7 @@ struct SentenceFlashcardView: View {
             print("[sentence SRS] no reviewData/card for sentence \(sentence.id)")
             gradeLabels = Dictionary(uniqueKeysWithValues: gradeButtons.map { ($0, "—") })
             nextCards = [:]
+            replaceEasyWithDelete = false
             return
         }
 
@@ -375,21 +405,31 @@ struct SentenceFlashcardView: View {
             let cards = try VocabSRS.nextReviewCards(card: card, now: now, contentType: .sentences)
             nextCards = cards
             var labels: [Rating: String] = [:]
+            var offerDelete = false
             for rating in gradeButtons {
                 if let card = cards[rating] {
                     let persistDue = VocabSRS.cardForPersist(card, now: now).due
                     let label = VocabSRS.relativeLabel(from: now, to: persistDue)
                     labels[rating] = label
+                    if rating == .easy {
+                        offerDelete = VocabSRS.shouldReplaceEasyWithDelete(
+                            easyDue: persistDue,
+                            now: now,
+                            contentType: .sentences
+                        )
+                    }
                     print("[sentence SRS] \(rating.stringValue) -> \(persistDue) (\(label))")
                 } else {
                     labels[rating] = "—"
                 }
             }
             gradeLabels = labels
+            replaceEasyWithDelete = offerDelete
         } catch {
             print("[sentence SRS] failed to schedule: \(error)")
             gradeLabels = Dictionary(uniqueKeysWithValues: gradeButtons.map { ($0, "—") })
             nextCards = [:]
+            replaceEasyWithDelete = false
         }
     }
 

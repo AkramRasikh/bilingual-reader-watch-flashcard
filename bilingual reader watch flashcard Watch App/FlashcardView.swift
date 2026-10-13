@@ -2,8 +2,9 @@
 //  FlashcardView.swift
 //  bilingual reader watch flashcard Watch App
 //
-//  One due word per screen. Definition starts in the center; swipe left for
-//  the target-language form, then transliteration and sentence context.
+//  One due word per screen. The English definition starts in the center, with
+//  the English sentence under it. Swipe left to add the target-language form,
+//  then the transliteration. Long-press shows the full uncut text.
 //  Top bar matches sentence review: due/total, loop, slow, and right-edge play/stop.
 //
 
@@ -16,6 +17,7 @@ struct FlashcardView: View {
     var remainingCount: Int = 0
     var totalInReview: Int = 0
     var adhocSentenceIds: [String] = []
+    var contentTitle: String? = nil
     var onBack: () -> Void = {}
     var onReviewed: (String, Card) -> Void = { _, _ in }
     var onDeleted: (String) -> Void = { _ in }
@@ -27,10 +29,12 @@ struct FlashcardView: View {
     @State private var expandedText: ExpandedText?
     @State private var gradeLabels: [Rating: String] = [:]
     @State private var nextCards: [Rating: Card] = [:]
+    @State private var replaceEasyWithDelete = false
     @State private var isSubmitting = false
     @State private var errorMessage: String?
 
     private let gradeButtons: [Rating] = [.again, .hard, .good, .easy]
+    private let deleteTint = Color(red: 0.85, green: 0.65, blue: 0.13)
 
     private var dueLabel: String {
         "\(remainingCount)/\(max(totalInReview, remainingCount))"
@@ -61,7 +65,8 @@ struct FlashcardView: View {
 
     var body: some View {
         VStack(spacing: 4) {
-            HStack(alignment: .top, spacing: 10) {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .top, spacing: 10) {
                 Button(action: onBack) {
                     HStack(spacing: 3) {
                         Image(systemName: "chevron.left")
@@ -120,6 +125,15 @@ struct FlashcardView: View {
                 } else {
                     Spacer(minLength: 0)
                 }
+                }
+
+                if let contentTitle, !contentTitle.isEmpty {
+                    Text(contentTitle)
+                        .font(.system(size: 8))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
             .zIndex(10)
             .background(.background)
@@ -169,17 +183,32 @@ struct FlashcardView: View {
                 if actionsPage == 0 {
                     HStack(spacing: 4) {
                         ForEach(gradeButtons, id: \.self) { rating in
-                            Button {
-                                Task { await submitGrade(rating) }
-                            } label: {
-                                Text(gradeLabels[rating] ?? "…")
-                                    .font(.system(size: 10).weight(.semibold))
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.7)
-                                    .frame(maxWidth: .infinity)
+                            if rating == .easy, replaceEasyWithDelete {
+                                Button {
+                                    Task { await submitDelete() }
+                                } label: {
+                                    Image(systemName: "trash.fill")
+                                        .font(.system(size: 14).weight(.semibold))
+                                        .foregroundStyle(deleteTint)
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.bordered)
+                                .tint(deleteTint)
+                                .disabled(isSubmitting)
+                                .accessibilityLabel("Delete")
+                            } else {
+                                Button {
+                                    Task { await submitGrade(rating) }
+                                } label: {
+                                    Text(gradeLabels[rating] ?? "…")
+                                        .font(.system(size: 10).weight(.semibold))
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.7)
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.bordered)
+                                .disabled(isSubmitting || nextCards[rating] == nil)
                             }
-                            .buttonStyle(.bordered)
-                            .disabled(isSubmitting || nextCards[rating] == nil)
                         }
                     }
                 } else {
@@ -187,11 +216,11 @@ struct FlashcardView: View {
                         Button {} label: {
                             Image(systemName: "trash.fill")
                                 .font(.system(size: 14).weight(.semibold))
-                                .foregroundStyle(Color(red: 0.85, green: 0.65, blue: 0.13))
+                                .foregroundStyle(deleteTint)
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.bordered)
-                        .tint(Color(red: 0.85, green: 0.65, blue: 0.13))
+                        .tint(deleteTint)
                         .allowsHitTesting(false)
                         .accessibilityHidden(true)
 
@@ -227,6 +256,7 @@ struct FlashcardView: View {
             contentPage = 0
             actionsPage = 0
             errorMessage = nil
+            replaceEasyWithDelete = false
             audioPlayer.stop()
             await computeNextReviews()
         }
@@ -240,11 +270,6 @@ struct FlashcardView: View {
         if !word.transliteration.isEmpty || word.mnemonic != nil {
             pages.append(.details)
         }
-        if let sentence = word.sentence,
-           !sentence.targetLang.isEmpty || !sentence.baseLang.isEmpty
-        {
-            pages.append(.context)
-        }
         return pages
     }
 
@@ -254,28 +279,44 @@ struct FlashcardView: View {
         return pages[min(contentPage, pages.count - 1)]
     }
 
+    /// English meaning, capped so a long gloss does not fill the watch face.
+    private var clippedDefinition: String {
+        let text = word.definition.isEmpty ? "(no definition)" : word.definition
+        return clipped(text, limit: 60)
+    }
+
+    /// English sentence only. The target-language line would give away the word.
+    private var englishSentence: String? {
+        let sentence = word.sentence?.baseLang
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return sentence.isEmpty ? nil : sentence
+    }
+
     @ViewBuilder
     private var wordBody: some View {
         switch currentFace {
         case .definition:
-            centeredLine(word.definition.isEmpty ? "(no definition)" : word.definition)
+            studyStack(showsTarget: false, showsDetails: false, showsSentence: true)
         case .target:
-            centeredLines(primary: displayedTargetForm, secondary: secondaryTargetForm)
+            studyStack(showsTarget: true, showsDetails: false, showsSentence: false)
         case .details:
-            centeredLines(
-                primary: displayedTargetForm,
-                secondary: detailsSecondary,
-                tertiary: detailsTertiary
-            )
-        case .context:
-            centeredLines(
-                primary: word.sentence?.targetLang ?? "",
-                secondary: word.sentence?.baseLang
-            )
+            studyStack(showsTarget: true, showsDetails: true, showsSentence: false)
         }
     }
 
-    /// Headline on the target-language screens: surface form, or base form when that is the only one.
+    /// About `limit` characters, breaking at the last space inside the limit.
+    private func clipped(_ text: String, limit: Int) -> String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count > limit else { return trimmed }
+        let end = trimmed.index(trimmed.startIndex, offsetBy: limit)
+        let head = trimmed[..<end]
+        if let space = head.lastIndex(of: " "), space > head.startIndex {
+            return head[..<space].trimmingCharacters(in: .whitespacesAndNewlines) + "…"
+        }
+        return String(head).trimmingCharacters(in: .whitespacesAndNewlines) + "…"
+    }
+
+    /// Target-language form under the definition: surface form, or base form when that is the only one.
     private var displayedTargetForm: String {
         word.surfaceForm.isEmpty ? word.baseForm : word.surfaceForm
     }
@@ -296,36 +337,53 @@ struct FlashcardView: View {
         return word.mnemonic
     }
 
-    private func centeredLine(_ text: String) -> some View {
-        Text(text)
-            .font(.system(size: 15, weight: .bold))
-            .foregroundStyle(Color.white)
-            .multilineTextAlignment(.center)
-            .lineLimit(4)
-            .minimumScaleFactor(0.7)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private func centeredLines(primary: String, secondary: String?, tertiary: String? = nil) -> some View {
+    private func studyStack(showsTarget: Bool, showsDetails: Bool, showsSentence: Bool) -> some View {
         VStack(spacing: 3) {
-            if !primary.isEmpty {
-                Text(primary)
+            Text(clippedDefinition)
+                .font(.system(size: showsTarget ? 13 : 15, weight: .bold))
+                .foregroundStyle(Color.white)
+                .multilineTextAlignment(.center)
+                .lineLimit(showsTarget ? 2 : 3)
+                .minimumScaleFactor(0.7)
+
+            if showsSentence, let englishSentence {
+                Text(englishSentence)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.7)
+            }
+
+            if showsTarget, !displayedTargetForm.isEmpty {
+                Text(displayedTargetForm)
                     .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(Color.white)
                     .multilineTextAlignment(.center)
-                    .lineLimit(3)
+                    .lineLimit(2)
                     .minimumScaleFactor(0.7)
             }
-            if let secondary, !secondary.isEmpty {
-                Text(secondary)
+
+            if showsTarget, let secondaryTargetForm {
+                Text(secondaryTargetForm)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-                    .lineLimit(3)
+                    .lineLimit(2)
                     .minimumScaleFactor(0.7)
             }
-            if let tertiary, !tertiary.isEmpty {
-                Text(tertiary)
+
+            if showsDetails, let detailsSecondary {
+                Text(detailsSecondary)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.7)
+            }
+
+            if showsDetails, let detailsTertiary {
+                Text(detailsTertiary)
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(.tertiary)
                     .multilineTextAlignment(.center)
@@ -420,6 +478,7 @@ struct FlashcardView: View {
             print("[vocab SRS] no reviewData/card for word \(word.id)")
             gradeLabels = Dictionary(uniqueKeysWithValues: gradeButtons.map { ($0, "—") })
             nextCards = [:]
+            replaceEasyWithDelete = false
             return
         }
 
@@ -430,22 +489,32 @@ struct FlashcardView: View {
             let cards = try VocabSRS.nextReviewCards(card: card, now: now)
             nextCards = cards
             var labels: [Rating: String] = [:]
+            var offerDelete = false
             for rating in gradeButtons {
                 if let card = cards[rating] {
                     // Label uses the same due the user would persist (incl. 5am snap).
                     let persistDue = VocabSRS.cardForPersist(card, now: now).due
                     let label = VocabSRS.relativeLabel(from: now, to: persistDue)
                     labels[rating] = label
+                    if rating == .easy {
+                        offerDelete = VocabSRS.shouldReplaceEasyWithDelete(
+                            easyDue: persistDue,
+                            now: now,
+                            contentType: .vocab
+                        )
+                    }
                     print("[vocab SRS] \(rating.stringValue) -> \(persistDue) (\(label))")
                 } else {
                     labels[rating] = "—"
                 }
             }
             gradeLabels = labels
+            replaceEasyWithDelete = offerDelete
         } catch {
             print("[vocab SRS] failed to schedule: \(error)")
             gradeLabels = Dictionary(uniqueKeysWithValues: gradeButtons.map { ($0, "—") })
             nextCards = [:]
+            replaceEasyWithDelete = false
         }
     }
 
@@ -511,20 +580,23 @@ struct FlashcardView: View {
         case .definition: return "Definition"
         case .target: return "Word"
         case .details: return "Details"
-        case .context: return "Sentence"
         }
     }
 
     private func expandedBody(for face: WordReviewFace) -> String {
         switch face {
         case .definition:
-            return word.definition
+            return joinedLines([word.definition, englishSentence])
         case .target:
-            return joinedLines([displayedTargetForm, secondaryTargetForm])
+            return joinedLines([word.definition, displayedTargetForm, secondaryTargetForm])
         case .details:
-            return joinedLines([displayedTargetForm, detailsSecondary, detailsTertiary])
-        case .context:
-            return joinedLines([word.sentence?.targetLang, word.sentence?.baseLang])
+            return joinedLines([
+                word.definition,
+                displayedTargetForm,
+                secondaryTargetForm,
+                detailsSecondary,
+                detailsTertiary,
+            ])
         }
     }
 }
@@ -533,7 +605,6 @@ private enum WordReviewFace {
     case definition
     case target
     case details
-    case context
 }
 
 private struct ExpandedText: Identifiable {

@@ -13,15 +13,14 @@ struct LanguageTopicsView: View {
     var dueClock: Date = Date()
     var onSelectImprov: () -> Void = {}
     var onSelectReview: (_ contentId: String?) -> Void = { _ in }
-    var onSelectSentenceReview: (_ contentId: String) -> Void = { _ in }
-    var onSelectSnippetReview: (_ contentId: String) -> Void = { _ in }
+    var onSelectSentenceReview: (_ contentId: String?) -> Void = { _ in }
     var onSelectShadowing: (_ contentId: String) -> Void = { _ in }
 
     private var displayName: String {
         language.prefix(1).uppercased() + language.dropFirst()
     }
 
-    private var topicsByDueCount: [(topic: ContentTopic, words: (due: Int, total: Int), sentences: (due: Int, total: Int), snippets: (due: Int, total: Int))] {
+    private var topicsByDueCount: [(topic: ContentTopic, words: (due: Int, total: Int), sentences: (due: Int, total: Int))] {
         _ = dueClock
         return bundle.topicsByDueCount
     }
@@ -70,6 +69,19 @@ struct LanguageTopicsView: View {
                     }
                 }
 
+                if bundle.sentenceDueCount > 0 {
+                    Button {
+                        onSelectSentenceReview(nil)
+                    } label: {
+                        HStack {
+                            Text("All")
+                                .fontWeight(.semibold)
+                            Spacer()
+                            dueTotalLabel(due: bundle.sentenceDueCount, total: bundle.sentenceReviewCount, suffix: "s")
+                        }
+                    }
+                }
+
                 if !topicsByDueCount.isEmpty {
                     Section("Content") {
                         ForEach(topicsByDueCount, id: \.topic.id) { row in
@@ -78,10 +90,8 @@ struct LanguageTopicsView: View {
                                 topic: row.topic,
                                 words: row.words,
                                 sentences: row.sentences,
-                                snippets: row.snippets,
                                 onWords: { onSelectReview(row.topic.id) },
                                 onSentences: { onSelectSentenceReview(row.topic.id) },
-                                onSnippets: { onSelectSnippetReview(row.topic.id) },
                                 onShadowing: { onSelectShadowing(row.topic.id) }
                             )
                         }
@@ -119,10 +129,8 @@ private struct ContentTopicRow: View {
     let topic: ContentTopic
     let words: (due: Int, total: Int)
     let sentences: (due: Int, total: Int)
-    let snippets: (due: Int, total: Int)
     var onWords: () -> Void
     var onSentences: () -> Void
-    var onSnippets: () -> Void
     var onShadowing: () -> Void
 
     @ObservedObject private var library = AudioLibrary.shared
@@ -169,13 +177,6 @@ private struct ContentTopicRow: View {
                     )
                 }
                 HStack(spacing: 3) {
-                    studyButton(
-                        label: "✂",
-                        due: snippets.due,
-                        total: snippets.total,
-                        name: "Snippets",
-                        action: onSnippets
-                    )
                     Button(action: onShadowing) {
                         Text("👻")
                             .font(.system(size: 11))

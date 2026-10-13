@@ -17,6 +17,7 @@ struct SentenceReviewSessionView: View {
     let language: String
     let initialSentences: [ReviewableSentence]
     var currentDueSentences: () -> [ReviewableSentence] = { [] }
+    var contentTitle: (ReviewableSentence) -> String? = { _ in nil }
     var totalInReview: () -> Int = { 0 }
     var onBack: () -> Void = {}
     var onReviewed: (String, Card) -> Void = { _, _ in }
@@ -36,6 +37,7 @@ struct SentenceReviewSessionView: View {
                     language: language,
                     remainingDue: queue.count,
                     totalInReview: totalInReview(),
+                    contentTitle: contentTitle(sentence),
                     onBack: leaveSession,
                     onReviewed: { sentenceId, card in
                         parkReviewed(sentenceId: sentenceId, card: card)

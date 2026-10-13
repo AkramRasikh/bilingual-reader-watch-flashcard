@@ -8,85 +8,44 @@
 import Foundation
 import FSRS
 
+/// Cue used to seek a word into topic audio. Review fields from older caches are ignored.
 struct ContentSnippet: Hashable, Codable {
     var id: String
-    var targetLang: String
-    var baseLang: String
     var focusedText: String?
     var suggestedFocusText: String?
     var time: TimeInterval
     var isContracted: Bool
     var isPreSnippet: Bool
-    var card: Card?
-    var vocab: [BreakdownWord]
-    var sentenceContext: SnippetSentenceContext
 
-    /// Older caches only stored cue fields. Missing review fields stay empty until the next reload.
     init(
         id: String = "",
-        targetLang: String = "",
-        baseLang: String = "",
         focusedText: String?,
         suggestedFocusText: String?,
         time: TimeInterval,
         isContracted: Bool,
-        isPreSnippet: Bool,
-        card: Card? = nil,
-        vocab: [BreakdownWord] = [],
-        sentenceContext: SnippetSentenceContext = SnippetSentenceContext()
+        isPreSnippet: Bool
     ) {
         self.id = id
-        self.targetLang = targetLang
-        self.baseLang = baseLang
         self.focusedText = focusedText
         self.suggestedFocusText = suggestedFocusText
         self.time = time
         self.isContracted = isContracted
         self.isPreSnippet = isPreSnippet
-        self.card = card
-        self.vocab = vocab
-        self.sentenceContext = sentenceContext
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, targetLang, baseLang, focusedText, suggestedFocusText
-        case time, isContracted, isPreSnippet, card, vocab, sentenceContext
+        case id, focusedText, suggestedFocusText
+        case time, isContracted, isPreSnippet
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decodeIfPresent(String.self, forKey: .id) ?? ""
-        targetLang = try container.decodeIfPresent(String.self, forKey: .targetLang) ?? ""
-        baseLang = try container.decodeIfPresent(String.self, forKey: .baseLang) ?? ""
         focusedText = try container.decodeIfPresent(String.self, forKey: .focusedText)
         suggestedFocusText = try container.decodeIfPresent(String.self, forKey: .suggestedFocusText)
         time = try container.decode(TimeInterval.self, forKey: .time)
         isContracted = try container.decodeIfPresent(Bool.self, forKey: .isContracted) ?? false
         isPreSnippet = try container.decodeIfPresent(Bool.self, forKey: .isPreSnippet) ?? false
-        card = try container.decodeIfPresent(Card.self, forKey: .card)
-        vocab = try container.decodeIfPresent([BreakdownWord].self, forKey: .vocab) ?? []
-        sentenceContext = try container.decodeIfPresent(SnippetSentenceContext.self, forKey: .sentenceContext) ?? SnippetSentenceContext()
-    }
-
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(id, forKey: .id)
-        try container.encode(targetLang, forKey: .targetLang)
-        try container.encode(baseLang, forKey: .baseLang)
-        try container.encodeIfPresent(focusedText, forKey: .focusedText)
-        try container.encodeIfPresent(suggestedFocusText, forKey: .suggestedFocusText)
-        try container.encode(time, forKey: .time)
-        try container.encode(isContracted, forKey: .isContracted)
-        try container.encode(isPreSnippet, forKey: .isPreSnippet)
-        try container.encodeIfPresent(card, forKey: .card)
-        try container.encode(vocab, forKey: .vocab)
-        try container.encode(sentenceContext, forKey: .sentenceContext)
-    }
-
-    func withCard(_ card: Card) -> ContentSnippet {
-        var copy = self
-        copy.card = card
-        return copy
     }
 }
 
@@ -140,10 +99,22 @@ struct LanguageBundle: Hashable, Codable {
     }
 
     /// All due words, Adhoc (`adhocContentId`), or a content topic.
+    /// All is grouped like the content list (Adhoc first, then most due topics).
+    /// Every queue is oldest `card.due` first, with the stored list order as a tie-break.
     func words(forContentId contentId: String?) -> [Word] {
-        wordsMatching(contentId: contentId)
-            .map { withStandaloneAudioIfNeeded($0).withFreshDue() }
-            .filter(\.isDue)
+        let due = indexedDueWords(matching: contentId)
+        if contentId == nil {
+            return orderedAllDueWords(due)
+        }
+        return due.sorted { oldestDueFirst($0, $1) }.map(\.word)
+    }
+
+    /// Topic title for a word, via `contexts[0]` matching a topic's sentence ids.
+    func contentTitle(for word: Word) -> String? {
+        guard let sentenceId = word.contexts.first else { return nil }
+        let title = topics.first { $0.sentenceIds.contains(sentenceId) }?.title
+        guard let title, !title.isEmpty else { return nil }
+        return title
     }
 
     func wordReviewCount(forContentId contentId: String?) -> Int {
@@ -169,6 +140,61 @@ struct LanguageBundle: Hashable, Codable {
         return words
     }
 
+    private struct IndexedDueWord {
+        let index: Int
+        let word: Word
+    }
+
+    private func indexedDueWords(matching contentId: String?) -> [IndexedDueWord] {
+        wordsMatching(contentId: contentId)
+            .enumerated()
+            .map { index, word in
+                IndexedDueWord(
+                    index: index,
+                    word: withStandaloneAudioIfNeeded(word).withFreshDue()
+                )
+            }
+            .filter(\.word.isDue)
+    }
+
+    /// Oldest due date first. Equal dates keep the stored list order.
+    private func oldestDueFirst(_ lhs: IndexedDueWord, _ rhs: IndexedDueWord) -> Bool {
+        let left = lhs.word.card?.due ?? .distantFuture
+        let right = rhs.word.card?.due ?? .distantFuture
+        if left != right { return left < right }
+        return lhs.index < rhs.index
+    }
+
+    /// Adhoc and words with no topic first, then `topicsByDueCount` order.
+    /// The per-topic path of `words(forContentId:)` does not call this, so
+    /// `topicsByDueCount` can count those queues without recursing.
+    private func orderedAllDueWords(_ due: [IndexedDueWord]) -> [Word] {
+        var topicIdBySentence: [String: String] = [:]
+        for topic in topics {
+            for sentenceId in topic.sentenceIds where topicIdBySentence[sentenceId] == nil {
+                topicIdBySentence[sentenceId] = topic.id
+            }
+        }
+
+        var unassigned: [IndexedDueWord] = []
+        var byTopic: [String: [IndexedDueWord]] = [:]
+        for item in due {
+            if let sentenceId = item.word.contexts.first,
+               let topicId = topicIdBySentence[sentenceId] {
+                byTopic[topicId, default: []].append(item)
+            } else {
+                unassigned.append(item)
+            }
+        }
+
+        var ordered = unassigned.sorted { oldestDueFirst($0, $1) }.map(\.word)
+        for row in topicsByDueCount {
+            let group = byTopic[row.topic.id] ?? []
+            ordered.append(contentsOf: group.sorted { oldestDueFirst($0, $1) }.map(\.word))
+        }
+        return ordered
+    }
+
     /// Cached bundles may predate audio attachment; clip is `{sentenceId}.mp3`.
     func withStandaloneAudioIfNeeded(_ word: Word) -> Word {
         if word.canPlayAudio { return word }
@@ -178,8 +204,8 @@ struct LanguageBundle: Hashable, Codable {
         return word.withAudio(fileName: sentenceId, playAt: 0)
     }
 
-    /// All topics, sorted by combined due count (desc). Zero-due topics stay in the list.
-    var topicsByDueCount: [(topic: ContentTopic, words: (due: Int, total: Int), sentences: (due: Int, total: Int), snippets: (due: Int, total: Int))] {
+    /// All topics, sorted by combined word and sentence due count (desc). Zero-due topics stay in the list.
+    var topicsByDueCount: [(topic: ContentTopic, words: (due: Int, total: Int), sentences: (due: Int, total: Int))] {
         topics
             .map { topic in
                 (
@@ -191,16 +217,12 @@ struct LanguageBundle: Hashable, Codable {
                     sentences: (
                         due: sentenceDueCount(forContentId: topic.id),
                         total: sentenceReviewCount(forContentId: topic.id)
-                    ),
-                    snippets: (
-                        due: snippetDueCount(forContentId: topic.id),
-                        total: snippetReviewCount(forContentId: topic.id)
                     )
                 )
             }
             .sorted {
-                let left = $0.words.due + $0.sentences.due + $0.snippets.due
-                let right = $1.words.due + $1.sentences.due + $1.snippets.due
+                let left = $0.words.due + $0.sentences.due
+                let right = $1.words.due + $1.sentences.due
                 if left != right { return left > right }
                 return $0.topic.title < $1.topic.title
             }
@@ -221,37 +243,57 @@ struct LanguageBundle: Hashable, Codable {
         return copy
     }
 
-    func sentences(forContentId contentId: String) -> [ReviewableSentence] {
+    /// Due sentences for one topic, or every topic when `contentId` is nil.
+    /// All follows the content list: each topic's sentences stay in transcript order.
+    func sentences(forContentId contentId: String?) -> [ReviewableSentence] {
+        if let contentId {
+            return dueSentences(in: contentId)
+        }
+        return orderedAllDueSentences()
+    }
+
+    func sentenceDueCount(forContentId contentId: String?) -> Int {
+        sentences(forContentId: contentId).count
+    }
+
+    func sentenceReviewCount(forContentId contentId: String?) -> Int {
+        let matching = contentId.map { id in sentences.filter { $0.contentId == id } } ?? sentences
+        return matching.filter { $0.card != nil }.count
+    }
+
+    func contentTitle(for sentence: ReviewableSentence) -> String? {
+        let title = topics.first { $0.id == sentence.contentId }?.title
+        guard let title, !title.isEmpty else { return nil }
+        return title
+    }
+
+    private func dueSentences(in contentId: String) -> [ReviewableSentence] {
         sentences
             .filter { $0.contentId == contentId }
             .map { $0.withFreshDue() }
             .filter(\.isDue)
     }
 
-    func sentenceDueCount(forContentId contentId: String) -> Int {
-        sentences(forContentId: contentId).count
-    }
+    /// Content-list order, transcript order inside each topic. Unassigned sentences come first.
+    private func orderedAllDueSentences() -> [ReviewableSentence] {
+        let topicIds = Set(topics.map(\.id))
+        var unassigned: [ReviewableSentence] = []
+        var byTopic: [String: [ReviewableSentence]] = [:]
+        for sentence in sentences {
+            let fresh = sentence.withFreshDue()
+            guard fresh.isDue else { continue }
+            if topicIds.contains(fresh.contentId) {
+                byTopic[fresh.contentId, default: []].append(fresh)
+            } else {
+                unassigned.append(fresh)
+            }
+        }
 
-    func sentenceReviewCount(forContentId contentId: String) -> Int {
-        sentences.filter { $0.contentId == contentId && $0.card != nil }.count
-    }
-
-    func snippets(forContentId contentId: String) -> [ReviewableSnippet] {
-        guard let topic = topics.first(where: { $0.id == contentId }) else { return [] }
-        return topic.snippets
-            .compactMap { ReviewableSnippet(contentId: contentId, snippet: $0, audioFileName: topic.title) }
-            .map { $0.withFreshDue() }
-            .filter(\.isDue)
-            .sorted { $0.time < $1.time }
-    }
-
-    func snippetDueCount(forContentId contentId: String) -> Int {
-        snippets(forContentId: contentId).count
-    }
-
-    func snippetReviewCount(forContentId contentId: String) -> Int {
-        guard let topic = topics.first(where: { $0.id == contentId }) else { return 0 }
-        return topic.snippets.filter { !$0.id.isEmpty && $0.card != nil }.count
+        var ordered = unassigned
+        for row in topicsByDueCount {
+            ordered.append(contentsOf: byTopic[row.topic.id] ?? [])
+        }
+        return ordered
     }
 
     func updatingCard(wordId: String, card: Card) -> LanguageBundle {
@@ -276,28 +318,6 @@ struct LanguageBundle: Hashable, Codable {
         return copy
     }
 
-    func updatingSnippetCard(snippetId: String, card: Card) -> LanguageBundle {
-        var copy = self
-        copy.topics = copy.topics.map { topic in
-            var topic = topic
-            topic.snippets = topic.snippets.map { snippet in
-                snippet.id == snippetId ? snippet.withCard(card) : snippet
-            }
-            return topic
-        }
-        return copy
-    }
-
-    func removingSnippet(id snippetId: String) -> LanguageBundle {
-        var copy = self
-        copy.topics = copy.topics.map { topic in
-            var topic = topic
-            topic.snippets.removeAll { $0.id == snippetId }
-            return topic
-        }
-        return copy
-    }
-
     func removingWord(id wordId: String) -> LanguageBundle {
         var copy = self
         if let word = words.first(where: { $0.id == wordId }),
@@ -312,27 +332,6 @@ struct LanguageBundle: Hashable, Codable {
 
     func topic(containingSentenceId sentenceId: String) -> ContentTopic? {
         topics.first { $0.sentenceIds.contains(sentenceId) }
-    }
-
-    /// Forms used to underline snippet breakdown words (base and surface).
-    func savedWordForms() -> Set<String> {
-        Set(words.flatMap { word in
-            [word.baseForm, word.surfaceForm]
-                .map(Self.normalizedWordForm)
-                .filter { !$0.isEmpty }
-        })
-    }
-
-    static func normalizedWordForm(_ text: String) -> String {
-        text.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-    }
-
-    func insertingWord(_ word: Word) -> LanguageBundle {
-        var copy = self
-        if !copy.words.contains(where: { $0.id == word.id }) {
-            copy.words.insert(word, at: 0)
-        }
-        return copy
     }
 
     /// Bumped when snippet review fields must be re-read from the server.

@@ -15,6 +15,7 @@ struct ReviewSessionView: View {
     let initialWords: [Word]
     var adhocSentenceIds: [String] = []
     var currentDueWords: () -> [Word] = { [] }
+    var contentTitle: (Word) -> String? = { _ in nil }
     var totalInReview: () -> Int = { 0 }
     var onBack: () -> Void = {}
     var onReviewed: (String, Card) -> Void = { _, _ in }
@@ -35,10 +36,12 @@ struct ReviewSessionView: View {
                     remainingCount: queue.count,
                     totalInReview: totalInReview(),
                     adhocSentenceIds: adhocSentenceIds,
+                    contentTitle: contentTitle(word),
                     onBack: leaveSession,
                     onReviewed: { wordId, card in
                         parkReviewed(wordId: wordId, card: card)
                         onReviewed(wordId, card)
+                        enqueueNewlyDue()
                     },
                     onDeleted: { wordId in
                         queue.removeAll { $0.id == wordId }
@@ -79,7 +82,6 @@ struct ReviewSessionView: View {
             waiting.append(current.withCard(card))
         }
         queue.removeAll { $0.id == wordId }
-        enqueueNewlyDue()
     }
 
     private func enqueueNewlyDue() {
@@ -98,11 +100,27 @@ struct ReviewSessionView: View {
         waiting = stillWaiting
 
         let heldIds = inQueue.union(ready.map(\.id)).union(Set(waiting.map(\.id)))
-        let fromStore = currentDueWords().filter { !heldIds.contains($0.id) }
+        let orderedDue = currentDueWords()
+        let fromStore = orderedDue.filter { !heldIds.contains($0.id) }
 
         let fresh = ready + fromStore
         guard !fresh.isEmpty else { return }
-        queue.append(contentsOf: fresh)
+
+        let merged = queue + fresh
+        var rank: [String: Int] = [:]
+        for (index, word) in orderedDue.enumerated() where rank[word.id] == nil {
+            rank[word.id] = index
+        }
+        var position: [String: Int] = [:]
+        for (index, word) in merged.enumerated() where position[word.id] == nil {
+            position[word.id] = index
+        }
+        queue = merged.sorted { lhs, rhs in
+            let left = rank[lhs.id] ?? Int.max
+            let right = rank[rhs.id] ?? Int.max
+            if left != right { return left < right }
+            return (position[lhs.id] ?? 0) < (position[rhs.id] ?? 0)
+        }
         print("[review] re-queued \(fresh.count) due word(s)")
     }
 }

@@ -3,7 +3,7 @@
 //  bilingual reader watch flashcard Watch App
 //
 //  Mirrors web ReviewSRSToggles + srs-algo.ts:
-//  vocab 0.98 / sentences 0.97 / snippets 0.93, maximum_interval: 1000, formattedToBe5am
+//  vocab 0.98 / sentences 0.97, maximum_interval: 1000, formattedToBe5am
 //
 
 import Foundation
@@ -13,19 +13,23 @@ enum VocabSRS {
     enum ContentType {
         case vocab
         case sentences
-        case snippet
 
         var requestRetention: Double {
             switch self {
             case .vocab: return 0.98
             case .sentences: return 0.97
-            case .snippet: return 0.93
             }
         }
     }
 
     static let requestRetention = ContentType.vocab.requestRetention
     static let maximumInterval = 1000.0
+
+    /// Easy's persisted due at or beyond this many days becomes the trash action.
+    private static let deleteInsteadOfEasyDays: [ContentType: Int] = [
+        .vocab: 45,
+        .sentences: 30,
+    ]
 
     /// ~23h50m — same threshold as web `isMoreThanADayAhead`.
     private static let dayAheadThreshold: TimeInterval = (23 * 60 + 50) * 60
@@ -44,13 +48,6 @@ enum VocabSRS {
         )
     )
 
-    private static let snippetScheduler = FSRS(
-        parameters: FSRSParameters(
-            requestRetention: ContentType.snippet.requestRetention,
-            maximumInterval: maximumInterval
-        )
-    )
-
     private static let isoFormatter: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -61,7 +58,6 @@ enum VocabSRS {
         switch contentType {
         case .vocab: return vocabScheduler
         case .sentences: return sentenceScheduler
-        case .snippet: return snippetScheduler
         }
     }
 
@@ -114,13 +110,6 @@ enum VocabSRS {
         return calendar.date(from: components) ?? date
     }
 
-    /// Again-schedule of a new card. Web `handleSaveWord` sends `nextScheduledOptions['1']`.
-    static func newWordReviewData(now: Date = Date()) throws -> [String: Any] {
-        let empty = Card(due: now)
-        let again = try nextReviewCards(card: empty, now: now, contentType: .vocab)[.again] ?? empty
-        return reviewDataDictionary(from: cardForPersist(again, now: now))
-    }
-
     /// Snake_case payload matching Firebase / web `reviewData`.
     static func reviewDataDictionary(from card: Card) -> [String: Any] {
         var dict: [String: Any] = [
@@ -137,6 +126,17 @@ enum VocabSRS {
             dict["last_review"] = isoFormatter.string(from: lastReview)
         }
         return dict
+    }
+
+    /// True when Easy's next persisted due is far enough that the grade row should offer delete.
+    /// Matches `relativeLabel`: a due of exactly N days reads as `Nd`.
+    static func shouldReplaceEasyWithDelete(
+        easyDue: Date,
+        now: Date,
+        contentType: ContentType
+    ) -> Bool {
+        guard let days = deleteInsteadOfEasyDays[contentType] else { return false }
+        return easyDue.timeIntervalSince(now) >= TimeInterval(days) * 86_400
     }
 
     static func relativeLabel(from now: Date, to due: Date) -> String {
