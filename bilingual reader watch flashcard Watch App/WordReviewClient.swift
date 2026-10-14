@@ -22,6 +22,11 @@ enum ReviewClientError: LocalizedError {
     }
 }
 
+enum ImprovBatchItem {
+    case word(Word)
+    case failed(String)
+}
+
 enum WordReviewClient {
     /// POST updateWord — same body as web `/api/updateWord`.
     static func updateReviewData(
@@ -117,12 +122,53 @@ enum WordReviewClient {
         }
 
         guard let root = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let wordDict = root["word"] as? [String: Any],
-              var word = Word(dictionary: wordDict)
+              let word = wordFromImprovPayload(root)
         else {
             throw ReviewClientError.failed("Couldn’t parse word")
         }
+        return word
+    }
 
+    /// POST addImprovWord — body `{ language, inquiries }`, 200 `{ results }`.
+    static func addImprovWords(language: String, inquiries: [String]) async throws -> [ImprovBatchItem] {
+        let body: [String: Any] = [
+            "language": language,
+            "inquiries": inquiries,
+        ]
+        let timeout = TimeInterval(max(120, inquiries.count * 120))
+        print("[WordReviewClient] addImprovWords language=\(language) count=\(inquiries.count)")
+        let (data, http) = try await postJSONReturning(
+            url: GeneratedEnv.addImprovWordURL,
+            body: body,
+            timeout: timeout
+        )
+        guard (200 ... 299).contains(http.statusCode) else {
+            let message = serverMessage(from: data, status: http.statusCode)
+            print("[WordReviewClient] addImprovWords failed: \(message)")
+            throw ReviewClientError.failed(message)
+        }
+        guard let root = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let results = root["results"] as? [[String: Any]]
+        else {
+            throw ReviewClientError.failed("Couldn’t parse results")
+        }
+        return results.map { entry in
+            if let error = entry["error"] as? String, !error.isEmpty {
+                return .failed(error)
+            }
+            if let word = wordFromImprovPayload(entry) {
+                return .word(word)
+            }
+            return .failed("Couldn’t parse word")
+        }
+    }
+
+    private static func wordFromImprovPayload(_ root: [String: Any]) -> Word? {
+        guard let wordDict = root["word"] as? [String: Any],
+              var word = Word(dictionary: wordDict)
+        else {
+            return nil
+        }
         if let sentenceDict = root["sentence"] as? [String: Any] {
             let sentence = SentenceContext(
                 targetLang: sentenceDict["targetLang"] as? String ?? "",
@@ -138,7 +184,6 @@ enum WordReviewClient {
         } else if let sentenceId = word.contexts.first {
             word = word.withAudio(fileName: sentenceId, playAt: 0)
         }
-
         return word
     }
 

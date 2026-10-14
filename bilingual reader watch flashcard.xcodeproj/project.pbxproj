@@ -29,6 +29,8 @@
 		2267AE43300C1AE900D62DAB /* WordAudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE42300C1AE900D62DAB /* WordAudioPlayer.swift */; };
 		2267AE45300C1AE900D62DAB /* ImprovView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE44300C1AE900D62DAB /* ImprovView.swift */; };
 		2267AE47300C1AE900D62DAB /* ImprovRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE46300C1AE900D62DAB /* ImprovRecorder.swift */; };
+		2267AE55300C1AE900D62DAB /* InquiryBank.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE54300C1AE900D62DAB /* InquiryBank.swift */; };
+		2267AE57300C1AE900D62DAB /* InquiryBankView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE56300C1AE900D62DAB /* InquiryBankView.swift */; };
 		2267AE49300C1AE900D62DAB /* AudioFileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE48300C1AE900D62DAB /* AudioFileStore.swift */; };
 		2267AE4B300C1AE900D62DAB /* TopicDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE4A300C1AE900D62DAB /* TopicDetailView.swift */; };
 		2267AE4D300C1AE900D62DAB /* ShadowingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2267AE4C300C1AE900D62DAB /* ShadowingView.swift */; };
@@ -101,6 +103,8 @@
 		2267AE42300C1AE900D62DAB /* WordAudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordAudioPlayer.swift; sourceTree = "<group>"; };
 		2267AE44300C1AE900D62DAB /* ImprovView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImprovView.swift; sourceTree = "<group>"; };
 		2267AE46300C1AE900D62DAB /* ImprovRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImprovRecorder.swift; sourceTree = "<group>"; };
+		2267AE54300C1AE900D62DAB /* InquiryBank.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InquiryBank.swift; sourceTree = "<group>"; };
+		2267AE56300C1AE900D62DAB /* InquiryBankView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InquiryBankView.swift; sourceTree = "<group>"; };
 		2267AE48300C1AE900D62DAB /* AudioFileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioFileStore.swift; sourceTree = "<group>"; };
 		2267AE4A300C1AE900D62DAB /* TopicDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicDetailView.swift; sourceTree = "<group>"; };
 		2267AE4C300C1AE900D62DAB /* ShadowingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShadowingView.swift; sourceTree = "<group>"; };
@@ -179,6 +183,8 @@
 				2267AE40300C1AE900D62DAB /* LanguageTopicsView.swift */,
 				2267AE44300C1AE900D62DAB /* ImprovView.swift */,
 				2267AE46300C1AE900D62DAB /* ImprovRecorder.swift */,
+				2267AE54300C1AE900D62DAB /* InquiryBank.swift */,
+				2267AE56300C1AE900D62DAB /* InquiryBankView.swift */,
 				2267AE3C300C1AE900D62DAB /* ReviewSessionView.swift */,
 				2267AE22300C1AE900D62DAB /* Info.plist */,
 				2267ADF8300C1AE900D62DAB /* Assets.xcassets */,
@@ -416,6 +422,8 @@
 				2267AE41300C1AE900D62DAB /* LanguageTopicsView.swift in Sources */,
 				2267AE45300C1AE900D62DAB /* ImprovView.swift in Sources */,
 				2267AE47300C1AE900D62DAB /* ImprovRecorder.swift in Sources */,
+				2267AE55300C1AE900D62DAB /* InquiryBank.swift in Sources */,
+				2267AE57300C1AE900D62DAB /* InquiryBankView.swift in Sources */,
 				2267AE43300C1AE900D62DAB /* WordAudioPlayer.swift in Sources */,
 				2267AE49300C1AE900D62DAB /* AudioFileStore.swift in Sources */,
 				2267AE4B300C1AE900D62DAB /* TopicDetailView.swift in Sources */,

@@ -17,6 +17,7 @@ private enum AppRoute: Hashable {
     /// `contentId == nil` means All due sentences for the language.
     case sentenceReview(language: String, contentId: String?)
     case improv(language: String)
+    case inquiryBank(language: String)
 }
 
 struct ContentView: View {
@@ -28,6 +29,7 @@ struct ContentView: View {
     @State private var refreshCandidate: String?
     @State private var path = NavigationPath()
     @State private var dueClock = Date()
+    @StateObject private var inquiryBank = InquiryBank()
 
     private var languages: [String] {
         OnLoadDataClient.knownLanguages
@@ -113,8 +115,12 @@ struct ContentView: View {
                         language: language,
                         bundle: bundlesByLanguage[language] ?? LanguageBundle(words: [], topics: []),
                         dueClock: dueClock,
+                        inquiryCount: inquiryBank.inquiries(for: language).count,
                         onSelectImprov: {
                             path.append(AppRoute.improv(language: language))
+                        },
+                        onSelectInquiryBank: {
+                            path.append(AppRoute.inquiryBank(language: language))
                         },
                         onSelectReview: { contentId in
                             path.append(AppRoute.review(language: language, contentId: contentId))
@@ -137,7 +143,12 @@ struct ContentView: View {
                     }
 
                 case .improv(let language):
-                    ImprovView(language: language) { word in
+                    ImprovView(language: language, inquiryBank: inquiryBank) { word in
+                        insertAdhocWord(word, language: language)
+                    }
+
+                case .inquiryBank(let language):
+                    InquiryBankView(language: language, bank: inquiryBank) { word in
                         insertAdhocWord(word, language: language)
                     }
 

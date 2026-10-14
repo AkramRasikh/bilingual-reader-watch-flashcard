@@ -2,13 +2,14 @@
 //  ImprovView.swift
 //  bilingual reader watch flashcard Watch App
 //
-//  Opens system dictation immediately, then text + Upload / Delete.
+//  Opens system dictation immediately, then text + Upload / Add to bank / Delete.
 //
 
 import SwiftUI
 
 struct ImprovView: View {
     let language: String
+    @ObservedObject var inquiryBank: InquiryBank
     var onWordAdded: (Word) -> Void = { _ in }
 
     @Environment(\.dismiss) private var dismiss
@@ -18,8 +19,13 @@ struct ImprovView: View {
     @State private var addedWord: Word?
     @State private var banner: StatusBanner?
 
-    init(language: String, onWordAdded: @escaping (Word) -> Void = { _ in }) {
+    init(
+        language: String,
+        inquiryBank: InquiryBank,
+        onWordAdded: @escaping (Word) -> Void = { _ in }
+    ) {
         self.language = language
+        _inquiryBank = ObservedObject(wrappedValue: inquiryBank)
         self.onWordAdded = onWordAdded
         _recorder = StateObject(wrappedValue: ImprovRecorder(language: language))
     }
@@ -96,11 +102,16 @@ struct ImprovView: View {
                     .multilineTextAlignment(.center)
             }
 
-            HStack(spacing: 6) {
+            VStack(spacing: 4) {
                 Button("Upload") {
                     Task { await uploadTapped() }
                 }
                 .tint(.blue)
+                .disabled(recorder.transcript.isEmpty)
+
+                Button("Add to bank") {
+                    addToBankTapped()
+                }
                 .disabled(recorder.transcript.isEmpty)
 
                 Button("Delete", role: .destructive) {
@@ -236,6 +247,15 @@ struct ImprovView: View {
         isUploading = false
     }
 
+    private func addToBankTapped() {
+        let inquiry = recorder.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !inquiry.isEmpty else { return }
+        inquiryBank.add(inquiry, language: language)
+        banner = nil
+        recorder.deleteClip()
+        recorder.start()
+    }
+
     private func againTapped() {
         addedWord = nil
         banner = nil
@@ -251,6 +271,6 @@ private struct StatusBanner: Equatable {
 
 #Preview {
     NavigationStack {
-        ImprovView(language: "french")
+        ImprovView(language: "french", inquiryBank: InquiryBank())
     }
 }

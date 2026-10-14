@@ -11,7 +11,9 @@ struct LanguageTopicsView: View {
     let language: String
     let bundle: LanguageBundle
     var dueClock: Date = Date()
+    var inquiryCount: Int = 0
     var onSelectImprov: () -> Void = {}
+    var onSelectInquiryBank: () -> Void = {}
     var onSelectReview: (_ contentId: String?) -> Void = { _ in }
     var onSelectSentenceReview: (_ contentId: String?) -> Void = { _ in }
     var onSelectShadowing: (_ contentId: String) -> Void = { _ in }
@@ -31,6 +33,11 @@ struct LanguageTopicsView: View {
             Section("Improv") {
                 Button(action: onSelectImprov) {
                     Text("Dictation")
+                }
+                if inquiryCount > 0 {
+                    Button(action: onSelectInquiryBank) {
+                        Text("Inquiry bank (\(inquiryCount))")
+                    }
                 }
             }
 
