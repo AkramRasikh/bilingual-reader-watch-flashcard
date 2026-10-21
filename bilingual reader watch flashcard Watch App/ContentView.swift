@@ -35,6 +35,7 @@ struct ContentView: View {
     @State private var path = NavigationPath()
     @State private var dueClock = Date()
     @StateObject private var inquiryBank = InquiryBank()
+    @ObservedObject private var reviewOutbox = ReviewOutbox.shared
 
     private var languages: [String] {
         OnLoadDataClient.knownLanguages
@@ -66,12 +67,26 @@ struct ContentView: View {
                                 ProgressView()
                                     .scaleEffect(0.7)
                             } else if let bundle = bundlesByLanguage[language] {
-                                languageDueLabel(bundle)
+                                VStack(alignment: .trailing, spacing: 0) {
+                                    languageDueLabel(bundle)
+                                    if reviewOutbox.count(for: language) > 0 {
+                                        Text("\(reviewOutbox.count(for: language)) to upload")
+                                            .font(.system(size: 8))
+                                            .foregroundStyle(.orange)
+                                            .monospacedDigit()
+                                    }
+                                }
                             }
                         }
                     }
                     .disabled(loadingLanguage != nil)
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        if reviewOutbox.count(for: language) > 0 {
+                            Button("Upload") {
+                                Task { await reviewOutbox.flush(language: language) }
+                            }
+                            .tint(.green)
+                        }
                         if cachedLanguages.contains(language) {
                             Button("Refresh") {
                                 refreshCandidate = language
@@ -111,7 +126,7 @@ struct ContentView: View {
                     refreshCandidate = nil
                 }
             } message: {
-                Text("This replaces local data for \(displayName(for: refreshCandidate ?? "")). Other devices may have newer or older cards.")
+                Text("This replaces local data for \(displayName(for: refreshCandidate ?? "")). Word reviews still waiting to upload are kept. Other devices may have newer or older cards.")
             }
             .navigationDestination(for: AppRoute.self) { route in
                 switch route {
@@ -240,10 +255,12 @@ struct ContentView: View {
         .onAppear {
             hydrateFromCache()
             dueClock = Date()
+            Task { await reviewOutbox.flushAll() }
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 dueClock = Date()
+                Task { await reviewOutbox.flushAll() }
             }
         }
         .onReceive(Timer.publish(every: 15, on: .main, in: .common).autoconnect()) { date in
@@ -300,7 +317,12 @@ struct ContentView: View {
     }
 
     private func hydrateFromCache() {
-        let cached = LocalWordStore.loadAll()
+        var cached = LocalWordStore.loadAll()
+        for language in Array(cached.keys) {
+            if let bundle = cached[language] {
+                cached[language] = bundleIncludingPending(bundle, language: language)
+            }
+        }
         bundlesByLanguage = cached
         cachedLanguages = Set(
             OnLoadDataClient.knownLanguages.filter { LocalWordStore.hasCached(language: $0) }
@@ -314,7 +336,8 @@ struct ContentView: View {
         defer { loadingLanguage = nil }
 
         do {
-            let bundle = try await OnLoadDataClient.loadLocalOrFetch(language: language)
+            let loaded = try await OnLoadDataClient.loadLocalOrFetch(language: language)
+            let bundle = bundleIncludingPending(loaded, language: language)
             bundlesByLanguage[language] = bundle
             cachedLanguages.insert(language)
             path.append(AppRoute.language(language))
@@ -332,7 +355,8 @@ struct ContentView: View {
         defer { loadingLanguage = nil }
 
         do {
-            let bundle = try await OnLoadDataClient.fetchAndCache(language: language)
+            let fetched = try await OnLoadDataClient.fetchAndCache(language: language)
+            let bundle = bundleIncludingPending(fetched, language: language)
             bundlesByLanguage[language] = bundle
             cachedLanguages.insert(language)
             print("[refresh] \(language) → \(bundle.dueCount) due")
@@ -342,6 +366,15 @@ struct ContentView: View {
             try? await Task.sleep(nanoseconds: 2_000_000_000)
             loadError = nil
         }
+    }
+
+    /// Pending word grades and deletes survive a server reload. Sentences stay as fetched.
+    private func bundleIncludingPending(_ bundle: LanguageBundle, language: String) -> LanguageBundle {
+        let merged = reviewOutbox.apply(language: language, to: bundle)
+        if merged != bundle {
+            LocalWordStore.save(language: language, bundle: merged)
+        }
+        return merged
     }
 
     private func languageDueLabel(_ bundle: LanguageBundle) -> some View {

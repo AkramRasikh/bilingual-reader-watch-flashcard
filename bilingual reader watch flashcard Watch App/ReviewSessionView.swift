@@ -71,6 +71,8 @@ struct ReviewSessionView: View {
         }
         .onDisappear {
             WordAudioPlayer.shared.stop()
+            let language = language
+            Task { await ReviewOutbox.shared.flush(language: language) }
         }
         .onAppear {
             guard !didInit else { return }

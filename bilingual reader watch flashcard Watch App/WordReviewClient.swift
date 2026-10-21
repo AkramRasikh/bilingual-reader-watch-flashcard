@@ -32,7 +32,8 @@ enum WordReviewClient {
     static func updateReviewData(
         wordId: String,
         language: String,
-        card: Card
+        card: Card,
+        timeout: TimeInterval = 60
     ) async throws {
         let formatted = VocabSRS.cardForPersist(card)
         let body: [String: Any] = [
@@ -42,7 +43,7 @@ enum WordReviewClient {
                 "reviewData": VocabSRS.reviewDataDictionary(from: formatted),
             ],
         ]
-        try await postJSON(url: GeneratedEnv.updateWordURL, body: body)
+        try await postJSON(url: GeneratedEnv.updateWordURL, body: body, timeout: timeout)
     }
 
     /// POST updateSentence — same body as web `/api/updateSentence`.
@@ -86,7 +87,8 @@ enum WordReviewClient {
     static func deleteWord(
         wordId: String,
         language: String,
-        additionalContext: [String] = []
+        additionalContext: [String] = [],
+        timeout: TimeInterval = 60
     ) async throws {
         var body: [String: Any] = [
             "id": wordId,
@@ -96,7 +98,7 @@ enum WordReviewClient {
             body["additionalContext"] = additionalContext
         }
         print("[WordReviewClient] deleteWord \(body)")
-        try await postJSON(url: GeneratedEnv.deleteWordURL, body: body)
+        try await postJSON(url: GeneratedEnv.deleteWordURL, body: body, timeout: timeout)
     }
 
     /// POST addImprovWord — body `{ language, inquiry }`, 200 `{ word, sentence }`.
@@ -187,8 +189,8 @@ enum WordReviewClient {
         return word
     }
 
-    private static func postJSON(url: URL, body: [String: Any]) async throws {
-        let (data, http) = try await postJSONReturning(url: url, body: body)
+    private static func postJSON(url: URL, body: [String: Any], timeout: TimeInterval = 60) async throws {
+        let (data, http) = try await postJSONReturning(url: url, body: body, timeout: timeout)
         guard (200 ... 299).contains(http.statusCode) else {
             let message = serverMessage(from: data, status: http.statusCode)
             print("[WordReviewClient] \(url.lastPathComponent) failed: \(message)")

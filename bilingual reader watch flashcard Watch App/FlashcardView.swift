@@ -31,8 +31,8 @@ struct FlashcardView: View {
     @State private var gradeLabels: [Rating: String] = [:]
     @State private var nextCards: [Rating: Card] = [:]
     @State private var replaceEasyWithDelete = false
-    @State private var isSubmitting = false
-    @State private var errorMessage: String?
+    /// Set for the rest of this card so a second tap cannot grade it again before the next word appears.
+    @State private var didCommit = false
 
     private let gradeButtons: [Rating] = [.again, .hard, .good, .easy]
     private let deleteTint = Color(red: 0.85, green: 0.65, blue: 0.13)
@@ -170,14 +170,6 @@ struct FlashcardView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .opacity(isSubmitting ? 0.45 : 1)
-
-            if let errorMessage {
-                Text(errorMessage)
-                    .font(.system(size: 9))
-                    .foregroundStyle(.red)
-                    .lineLimit(2)
-            }
 
             // Bottom — swipe between SRS grades and delete (web ReviewSRSToggles)
             Group {
@@ -186,7 +178,7 @@ struct FlashcardView: View {
                         ForEach(gradeButtons, id: \.self) { rating in
                             if rating == .easy, replaceEasyWithDelete {
                                 Button {
-                                    Task { await submitDelete() }
+                                    submitDelete()
                                 } label: {
                                     Image(systemName: "trash.fill")
                                         .font(.system(size: 14).weight(.semibold))
@@ -195,11 +187,11 @@ struct FlashcardView: View {
                                 }
                                 .buttonStyle(.bordered)
                                 .tint(deleteTint)
-                                .disabled(isSubmitting)
+                                .disabled(didCommit)
                                 .accessibilityLabel("Delete")
                             } else {
                                 Button {
-                                    Task { await submitGrade(rating) }
+                                    submitGrade(rating)
                                 } label: {
                                     Text(gradeLabels[rating] ?? "…")
                                         .font(.system(size: 10).weight(.semibold))
@@ -208,7 +200,7 @@ struct FlashcardView: View {
                                         .frame(maxWidth: .infinity)
                                 }
                                 .buttonStyle(.bordered)
-                                .disabled(isSubmitting || nextCards[rating] == nil)
+                                .disabled(didCommit || nextCards[rating] == nil)
                             }
                         }
                     }
@@ -237,7 +229,6 @@ struct FlashcardView: View {
             .contentShape(Rectangle())
             .gesture(actionsSwipeGesture)
             .background(.background)
-            .opacity(isSubmitting ? 0.45 : 1)
         }
         .padding(.horizontal, 0)
         .padding(.top, -2)
@@ -254,12 +245,17 @@ struct FlashcardView: View {
             }
         }
         .task(id: word.id) {
+            let cardId = word.id
             contentPage = 0
             actionsPage = 0
-            errorMessage = nil
+            didCommit = true
             replaceEasyWithDelete = false
+            gradeLabels = [:]
+            nextCards = [:]
             audioPlayer.stop()
             await computeNextReviews()
+            guard cardId == word.id else { return }
+            didCommit = false
         }
     }
 
@@ -444,7 +440,7 @@ struct FlashcardView: View {
                     applyContentSwipe(horizontal)
                     return
                 }
-                guard hypot(horizontal, vertical) < 12, !isSubmitting else { return }
+                guard hypot(horizontal, vertical) < 12 else { return }
                 toggleWordPlayback()
             }
     }
@@ -499,8 +495,8 @@ struct FlashcardView: View {
                     }
                     return
                 }
-                guard hypot(horizontal, vertical) < 12, !isSubmitting else { return }
-                Task { await submitDelete() }
+                guard hypot(horizontal, vertical) < 12, !didCommit else { return }
+                submitDelete()
             }
     }
 
@@ -550,49 +546,29 @@ struct FlashcardView: View {
         }
     }
 
-    @MainActor
-    private func submitGrade(_ rating: Rating) async {
-        guard !isSubmitting, let next = nextCards[rating] else { return }
-        isSubmitting = true
-        errorMessage = nil
-        defer { isSubmitting = false }
-
-        do {
-            let persisted = VocabSRS.cardForPersist(next)
-            try await WordReviewClient.updateReviewData(
-                wordId: word.id,
-                language: language,
-                card: next
-            )
-            print("[vocab SRS] saved \(rating.stringValue) for \(word.id)")
-            audioPlayer.stop()
-            onReviewed(word.id, persisted)
-        } catch {
-            print("[vocab SRS] update failed: \(error)")
-            errorMessage = "Save failed"
-        }
+    private func submitGrade(_ rating: Rating) {
+        guard !didCommit, let next = nextCards[rating] else { return }
+        didCommit = true
+        let persisted = VocabSRS.cardForPersist(next)
+        ReviewOutbox.shared.enqueueGrade(language: language, wordId: word.id, card: persisted)
+        print("[vocab SRS] committed \(rating.stringValue) for \(word.id)")
+        audioPlayer.stop()
+        onReviewed(word.id, persisted)
+        Task { await ReviewOutbox.shared.flush(language: language) }
     }
 
-    @MainActor
-    private func submitDelete() async {
-        guard !isSubmitting else { return }
-        isSubmitting = true
-        errorMessage = nil
-        defer { isSubmitting = false }
-
-        do {
-            try await WordReviewClient.deleteWord(
-                wordId: word.id,
-                language: language,
-                additionalContext: additionalContextForDelete
-            )
-            print("[vocab SRS] deleted \(word.id)")
-            audioPlayer.stop()
-            onDeleted(word.id)
-        } catch {
-            print("[vocab SRS] delete failed: \(error)")
-            errorMessage = "Delete failed"
-        }
+    private func submitDelete() {
+        guard !didCommit else { return }
+        didCommit = true
+        ReviewOutbox.shared.enqueueDelete(
+            language: language,
+            wordId: word.id,
+            additionalContext: additionalContextForDelete
+        )
+        print("[vocab SRS] committed delete \(word.id)")
+        audioPlayer.stop()
+        onDeleted(word.id)
+        Task { await ReviewOutbox.shared.flush(language: language) }
     }
 
     /// Helper sentence id for `deleteWord.additionalContext` — only Adhoc words.
