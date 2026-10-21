@@ -17,7 +17,11 @@ struct ReviewSessionView: View {
     var currentDueWords: () -> [Word] = { [] }
     var contentTitle: (Word) -> String? = { _ in nil }
     var totalInReview: () -> Int = { 0 }
+    var continuation: () -> StudyContinuation = { StudyContinuation() }
     var onBack: () -> Void = {}
+    var onStudyWords: () -> Void = {}
+    var onStudySentences: () -> Void = {}
+    var onStudyNextWords: () -> Void = {}
     var onReviewed: (String, Card) -> Void = { _, _ in }
     var onDeleted: (String) -> Void = { _ in }
 
@@ -49,14 +53,20 @@ struct ReviewSessionView: View {
                         onDeleted(wordId)
                     }
                 )
+            } else if didInit {
+                SessionDoneView(
+                    continuation: continuation(),
+                    offersWords: false,
+                    offersSentences: true,
+                    onWords: onStudyWords,
+                    onSentences: onStudySentences,
+                    onNextWords: onStudyNextWords,
+                    onBack: leaveSession
+                )
             } else {
-                VStack(spacing: 8) {
-                    Text(queue.isEmpty && didInit ? "Done for now" : "No words due")
-                        .font(.caption)
-                        .multilineTextAlignment(.center)
-                    Button("Back", action: leaveSession)
-                        .font(.caption2)
-                }
+                Text("No words due")
+                    .font(.caption)
+                    .multilineTextAlignment(.center)
             }
         }
         .onDisappear {
@@ -122,5 +132,71 @@ struct ReviewSessionView: View {
             return (position[lhs.id] ?? 0) < (position[rhs.id] ?? 0)
         }
         print("[review] re-queued \(fresh.count) due word(s)")
+    }
+}
+
+struct StudyContinuation {
+    var wordsDue: Int = 0
+    var sentencesDue: Int = 0
+    var nextWordsTitle: String?
+    var nextWordsDue: Int = 0
+}
+
+struct SessionDoneView: View {
+    var continuation: StudyContinuation
+    var offersWords: Bool
+    var offersSentences: Bool
+    var onWords: () -> Void
+    var onSentences: () -> Void
+    var onNextWords: () -> Void
+    var onBack: () -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 6) {
+                Text("Done for now")
+                    .font(.caption)
+                    .multilineTextAlignment(.center)
+
+                if offersWords, continuation.wordsDue > 0 {
+                    continuationButton(
+                        title: "Words \(continuation.wordsDue)",
+                        action: onWords
+                    )
+                }
+                if offersSentences, continuation.sentencesDue > 0 {
+                    continuationButton(
+                        title: "Sentences \(continuation.sentencesDue)",
+                        action: onSentences
+                    )
+                }
+                if continuation.nextWordsDue > 0 {
+                    Button(action: onNextWords) {
+                        VStack(spacing: 1) {
+                            Text("Next words \(continuation.nextWordsDue)")
+                                .font(.system(size: 12, weight: .semibold))
+                            if let title = continuation.nextWordsTitle, !title.isEmpty {
+                                Text(title)
+                                    .font(.system(size: 9))
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                }
+
+                Button("Back", action: onBack)
+                    .font(.caption2)
+            }
+            .padding(.horizontal, 4)
+        }
+    }
+
+    private func continuationButton(title: String, action: @escaping () -> Void) -> some View {
+        Button(title, action: action)
+            .font(.system(size: 12, weight: .semibold))
+            .buttonStyle(.bordered)
     }
 }

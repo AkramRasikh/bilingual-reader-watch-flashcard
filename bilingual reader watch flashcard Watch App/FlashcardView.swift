@@ -4,7 +4,8 @@
 //
 //  One due word per screen. The English definition starts in the center, with
 //  the English sentence under it. Swipe left to add the target-language form,
-//  then the transliteration. Long-press shows the full uncut text.
+//  then the transliteration, then the target-language sentence.
+//  Long-press shows the full uncut text.
 //  Top bar matches sentence review: due/total, loop, slow, and right-edge play/stop.
 //
 
@@ -270,6 +271,9 @@ struct FlashcardView: View {
         if !word.transliteration.isEmpty || word.mnemonic != nil {
             pages.append(.details)
         }
+        if targetSentence != nil {
+            pages.append(.context)
+        }
         return pages
     }
 
@@ -285,9 +289,16 @@ struct FlashcardView: View {
         return clipped(text, limit: 60)
     }
 
-    /// English sentence only. The target-language line would give away the word.
+    /// English sentence on the first face. The target-language line stays behind a swipe.
     private var englishSentence: String? {
         let sentence = word.sentence?.baseLang
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return sentence.isEmpty ? nil : sentence
+    }
+
+    /// Sentence the word belongs to, in the language being studied.
+    private var targetSentence: String? {
+        let sentence = word.sentence?.targetLang
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return sentence.isEmpty ? nil : sentence
     }
@@ -296,11 +307,18 @@ struct FlashcardView: View {
     private var wordBody: some View {
         switch currentFace {
         case .definition:
-            studyStack(showsTarget: false, showsDetails: false, showsSentence: true)
+            studyStack(showsTarget: false, showsDetails: false, showsEnglishSentence: true)
         case .target:
-            studyStack(showsTarget: true, showsDetails: false, showsSentence: false)
+            studyStack(showsTarget: true, showsDetails: false, showsEnglishSentence: false)
         case .details:
-            studyStack(showsTarget: true, showsDetails: true, showsSentence: false)
+            studyStack(showsTarget: true, showsDetails: true, showsEnglishSentence: false)
+        case .context:
+            studyStack(
+                showsTarget: true,
+                showsDetails: true,
+                showsEnglishSentence: false,
+                showsTargetSentence: true
+            )
         }
     }
 
@@ -337,16 +355,21 @@ struct FlashcardView: View {
         return word.mnemonic
     }
 
-    private func studyStack(showsTarget: Bool, showsDetails: Bool, showsSentence: Bool) -> some View {
+    private func studyStack(
+        showsTarget: Bool,
+        showsDetails: Bool,
+        showsEnglishSentence: Bool,
+        showsTargetSentence: Bool = false
+    ) -> some View {
         VStack(spacing: 3) {
             Text(clippedDefinition)
-                .font(.system(size: showsTarget ? 13 : 15, weight: .bold))
+                .font(.system(size: showsTargetSentence ? 12 : (showsTarget ? 13 : 15), weight: .bold))
                 .foregroundStyle(Color.white)
                 .multilineTextAlignment(.center)
-                .lineLimit(showsTarget ? 2 : 3)
+                .lineLimit(showsTargetSentence ? 1 : (showsTarget ? 2 : 3))
                 .minimumScaleFactor(0.7)
 
-            if showsSentence, let englishSentence {
+            if showsEnglishSentence, let englishSentence {
                 Text(englishSentence)
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(.secondary)
@@ -357,10 +380,10 @@ struct FlashcardView: View {
 
             if showsTarget, !displayedTargetForm.isEmpty {
                 Text(displayedTargetForm)
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.system(size: showsTargetSentence ? 14 : 15, weight: .bold))
                     .foregroundStyle(Color.white)
                     .multilineTextAlignment(.center)
-                    .lineLimit(2)
+                    .lineLimit(showsTargetSentence ? 1 : 2)
                     .minimumScaleFactor(0.7)
             }
 
@@ -387,7 +410,16 @@ struct FlashcardView: View {
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(.tertiary)
                     .multilineTextAlignment(.center)
-                    .lineLimit(2)
+                    .lineLimit(showsTargetSentence ? 1 : 2)
+                    .minimumScaleFactor(0.7)
+            }
+
+            if showsTargetSentence, let targetSentence {
+                Text(targetSentence)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(4)
                     .minimumScaleFactor(0.7)
             }
         }
@@ -580,6 +612,7 @@ struct FlashcardView: View {
         case .definition: return "Definition"
         case .target: return "Word"
         case .details: return "Details"
+        case .context: return "Sentence"
         }
     }
 
@@ -597,6 +630,15 @@ struct FlashcardView: View {
                 detailsSecondary,
                 detailsTertiary,
             ])
+        case .context:
+            return joinedLines([
+                word.definition,
+                displayedTargetForm,
+                secondaryTargetForm,
+                detailsSecondary,
+                detailsTertiary,
+                targetSentence,
+            ])
         }
     }
 }
@@ -605,6 +647,7 @@ private enum WordReviewFace {
     case definition
     case target
     case details
+    case context
 }
 
 private struct ExpandedText: Identifiable {

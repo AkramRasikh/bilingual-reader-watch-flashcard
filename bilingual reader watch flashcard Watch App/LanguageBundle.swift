@@ -267,6 +267,15 @@ struct LanguageBundle: Hashable, Codable {
         return title
     }
 
+    /// Next topic in the content list that still has due words, skipping `contentId`.
+    func nextTopicWithDueWords(after contentId: String) -> (id: String, title: String, due: Int)? {
+        topicsByDueCount.first { row in
+            row.topic.id != contentId && row.words.due > 0
+        }.map { row in
+            (id: row.topic.id, title: row.topic.title, due: row.words.due)
+        }
+    }
+
     private func dueSentences(in contentId: String) -> [ReviewableSentence] {
         sentences
             .filter { $0.contentId == contentId }

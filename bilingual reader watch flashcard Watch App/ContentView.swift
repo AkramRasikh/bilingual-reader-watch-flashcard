@@ -9,6 +9,11 @@ import Combine
 import FSRS
 import SwiftUI
 
+private enum ContinueStudy {
+    case words
+    case sentences
+}
+
 private enum AppRoute: Hashable {
     case language(String)
     case shadowing(language: String, contentId: String)
@@ -168,7 +173,19 @@ struct ContentView: View {
                         totalInReview: {
                             bundlesByLanguage[language]?.wordReviewCount(forContentId: contentId) ?? 0
                         },
+                        continuation: {
+                            studyContinuation(language: language, contentId: contentId)
+                        },
                         onBack: { popRoute() },
+                        onStudyWords: {
+                            openSameContent(.words, language: language, contentId: contentId)
+                        },
+                        onStudySentences: {
+                            openSameContent(.sentences, language: language, contentId: contentId)
+                        },
+                        onStudyNextWords: {
+                            openNextWords(language: language, after: contentId)
+                        },
                         onReviewed: { wordId, card in
                             updateReviewedWord(wordId, card: card, language: language)
                         },
@@ -176,6 +193,7 @@ struct ContentView: View {
                             removeWord(wordId, language: language)
                         }
                     )
+                    .id("words-\(contentId ?? "all")")
                     .navigationBarBackButtonHidden(true)
                     .toolbar(.hidden, for: .navigationBar)
 
@@ -193,7 +211,19 @@ struct ContentView: View {
                         totalInReview: {
                             bundlesByLanguage[language]?.sentenceReviewCount(forContentId: contentId) ?? 0
                         },
+                        continuation: {
+                            studyContinuation(language: language, contentId: contentId)
+                        },
                         onBack: { popRoute() },
+                        onStudyWords: {
+                            openSameContent(.words, language: language, contentId: contentId)
+                        },
+                        onStudySentences: {
+                            openSameContent(.sentences, language: language, contentId: contentId)
+                        },
+                        onStudyNextWords: {
+                            openNextWords(language: language, after: contentId)
+                        },
                         onReviewed: { sentenceId, card in
                             updateReviewedSentence(sentenceId, card: card, language: language)
                         },
@@ -201,6 +231,7 @@ struct ContentView: View {
                             removeSentenceReview(sentenceId, language: language)
                         }
                     )
+                    .id("sentences-\(contentId ?? "all")")
                     .navigationBarBackButtonHidden(true)
                     .toolbar(.hidden, for: .navigationBar)
                 }
@@ -229,6 +260,43 @@ struct ContentView: View {
         if !path.isEmpty {
             path.removeLast()
         }
+    }
+
+    private func studyContinuation(language: String, contentId: String?) -> StudyContinuation {
+        guard let contentId, let bundle = bundlesByLanguage[language] else {
+            return StudyContinuation()
+        }
+        let next = bundle.nextTopicWithDueWords(after: contentId)
+        return StudyContinuation(
+            wordsDue: bundle.words(forContentId: contentId).count,
+            sentencesDue: bundle.sentenceDueCount(forContentId: contentId),
+            nextWordsTitle: next?.title,
+            nextWordsDue: next?.due ?? 0
+        )
+    }
+
+    private func openSameContent(_ kind: ContinueStudy, language: String, contentId: String?) {
+        guard let contentId else { return }
+        switch kind {
+        case .words:
+            replaceTop(with: .review(language: language, contentId: contentId))
+        case .sentences:
+            replaceTop(with: .sentenceReview(language: language, contentId: contentId))
+        }
+    }
+
+    private func openNextWords(language: String, after contentId: String?) {
+        guard let contentId,
+              let next = bundlesByLanguage[language]?.nextTopicWithDueWords(after: contentId)
+        else { return }
+        replaceTop(with: .review(language: language, contentId: next.id))
+    }
+
+    private func replaceTop(with route: AppRoute) {
+        if !path.isEmpty {
+            path.removeLast()
+        }
+        path.append(route)
     }
 
     private func hydrateFromCache() {

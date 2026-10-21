@@ -19,7 +19,11 @@ struct SentenceReviewSessionView: View {
     var currentDueSentences: () -> [ReviewableSentence] = { [] }
     var contentTitle: (ReviewableSentence) -> String? = { _ in nil }
     var totalInReview: () -> Int = { 0 }
+    var continuation: () -> StudyContinuation = { StudyContinuation() }
     var onBack: () -> Void = {}
+    var onStudyWords: () -> Void = {}
+    var onStudySentences: () -> Void = {}
+    var onStudyNextWords: () -> Void = {}
     var onReviewed: (String, Card) -> Void = { _, _ in }
     var onRemovedReview: (String) -> Void = { _ in }
 
@@ -49,14 +53,20 @@ struct SentenceReviewSessionView: View {
                         onRemovedReview(sentenceId)
                     }
                 )
+            } else if didInit {
+                SessionDoneView(
+                    continuation: continuation(),
+                    offersWords: true,
+                    offersSentences: false,
+                    onWords: onStudyWords,
+                    onSentences: onStudySentences,
+                    onNextWords: onStudyNextWords,
+                    onBack: leaveSession
+                )
             } else {
-                VStack(spacing: 8) {
-                    Text(queue.isEmpty && didInit ? "Done for now" : "No sentences due")
-                        .font(.caption)
-                        .multilineTextAlignment(.center)
-                    Button("Back", action: leaveSession)
-                        .font(.caption2)
-                }
+                Text("No sentences due")
+                    .font(.caption)
+                    .multilineTextAlignment(.center)
             }
         }
         .onAppear {
